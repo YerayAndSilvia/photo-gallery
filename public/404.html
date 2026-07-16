@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Nuestra Galería 💕</title>
+    <script>
+      // GitHub Pages SPA redirect
+      // Cuando GitHub Pages recibe una ruta que no existe (e.g. /photo-gallery/upload),
+      // sirve este 404.html. Este script redirige al index.html pasando la ruta como query string.
+      var pathSegmentsToKeep = 1; // número de segmentos del repo (1 para usuario.github.io/repo)
+
+      var l = window.location;
+      l.replace(
+        l.protocol + '//' + l.hostname + (l.port ? ':' + l.port : '') +
+        l.pathname.split('/').slice(0, 1 + pathSegmentsToKeep).join('/') +
+        '/?/' + l.pathname.slice(1).split('/').slice(pathSegmentsToKeep).join('/').replace(/&/g, '~and~') +
+        (l.search ? '&' + l.search.slice(1).replace(/&/g, '~and~') : '') +
+        l.hash
+      );
+    </script>
+  </head>
+  <body></body>
+</html>
