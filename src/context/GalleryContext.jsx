@@ -1,54 +1,57 @@
-import { createContext, useContext, useState, useCallback } from 'react'
+import { createContext, useContext, useState, useCallback, useEffect } from 'react'
+import {
+  collection,
+  onSnapshot,
+  addDoc,
+  deleteDoc,
+  updateDoc,
+  doc,
+  serverTimestamp,
+  query,
+  orderBy,
+} from 'firebase/firestore'
+import { db } from '../utils/firebase'
 
 const GalleryContext = createContext(null)
 
-const STORAGE_KEY = 'gallery_posts'
-
-function loadPosts() {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY)
-    return raw ? JSON.parse(raw) : []
-  } catch {
-    return []
-  }
-}
-
-function savePosts(posts) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(posts))
-}
+const POSTS_COLLECTION = 'posts'
 
 export function GalleryProvider({ children }) {
-  const [posts, setPosts] = useState(loadPosts)
+  const [posts, setPosts] = useState([])
+  const [loading, setLoading] = useState(true)
 
-  const addPost = useCallback((post) => {
-    setPosts((prev) => {
-      const next = [
-        ...prev,
-        {
-          ...post,
-          id: Date.now().toString(),
-          createdAt: new Date().toISOString(),
-        },
-      ]
-      savePosts(next)
-      return next
+  // Escucha en tiempo real — cualquier cambio en Firestore actualiza el estado
+  useEffect(() => {
+    const q = query(
+      collection(db, POSTS_COLLECTION),
+      orderBy('createdAt', 'desc')
+    )
+
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const docs = snapshot.docs.map((d) => ({
+        id: d.id,
+        ...d.data(),
+      }))
+      setPosts(docs)
+      setLoading(false)
+    })
+
+    return () => unsubscribe()
+  }, [])
+
+  const addPost = useCallback(async (post) => {
+    await addDoc(collection(db, POSTS_COLLECTION), {
+      ...post,
+      createdAt: serverTimestamp(),
     })
   }, [])
 
-  const deletePost = useCallback((id) => {
-    setPosts((prev) => {
-      const next = prev.filter((p) => p.id !== id)
-      savePosts(next)
-      return next
-    })
+  const deletePost = useCallback(async (id) => {
+    await deleteDoc(doc(db, POSTS_COLLECTION, id))
   }, [])
 
-  const updatePost = useCallback((id, changes) => {
-    setPosts((prev) => {
-      const next = prev.map((p) => (p.id === id ? { ...p, ...changes } : p))
-      savePosts(next)
-      return next
-    })
+  const updatePost = useCallback(async (id, changes) => {
+    await updateDoc(doc(db, POSTS_COLLECTION, id), changes)
   }, [])
 
   // Agrupa posts por año y mes
@@ -76,7 +79,16 @@ export function GalleryProvider({ children }) {
 
   return (
     <GalleryContext.Provider
-      value={{ posts, addPost, deletePost, updatePost, getPostsByYear, getPostById, getPostsByMonth }}
+      value={{
+        posts,
+        loading,
+        addPost,
+        deletePost,
+        updatePost,
+        getPostsByYear,
+        getPostById,
+        getPostsByMonth,
+      }}
     >
       {children}
     </GalleryContext.Provider>

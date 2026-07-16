@@ -4,6 +4,8 @@ import { useGallery } from '../context/GalleryContext'
 import Layout from '../components/Layout'
 import { MONTHS, MONTH_COLORS } from '../utils/constants'
 import { ArrowLeft, Trash2, ChevronLeft, ChevronRight, X, Calendar } from 'lucide-react'
+import { storage } from '../utils/firebase'
+import { ref, deleteObject } from 'firebase/storage'
 
 export default function PostDetail() {
   const { id } = useParams()
@@ -13,6 +15,7 @@ export default function PostDetail() {
 
   const [lightbox, setLightbox] = useState(null) // índice de la foto en lightbox
   const [confirmDelete, setConfirmDelete] = useState(false)
+  const [deleting, setDeleting] = useState(false)
 
   if (!post) {
     return (
@@ -29,9 +32,31 @@ export default function PostDetail() {
   const gradient = MONTH_COLORS[monthIdx]
   const monthName = MONTHS[monthIdx]
 
-  const handleDelete = () => {
-    deletePost(id)
-    navigate('/')
+  const handleDelete = async () => {
+    setDeleting(true)
+    try {
+      // Eliminar cada foto de Firebase Storage
+      if (post.photos?.length > 0) {
+        await Promise.all(
+          post.photos.map(async (url) => {
+            try {
+              // Extraer la ruta del archivo desde la URL de Storage
+              const storageRef = ref(storage, url)
+              await deleteObject(storageRef)
+            } catch {
+              // Si la foto ya no existe en Storage, continuamos igualmente
+            }
+          })
+        )
+      }
+      // Eliminar el documento de Firestore
+      await deletePost(id)
+      navigate('/')
+    } catch (err) {
+      console.error('Error eliminando el post:', err)
+      setDeleting(false)
+      setConfirmDelete(false)
+    }
   }
 
   const prevPhoto = () => setLightbox((i) => (i > 0 ? i - 1 : post.photos.length - 1))
@@ -55,13 +80,25 @@ export default function PostDetail() {
               <span className="text-sm text-gray-500">¿Eliminar este post?</span>
               <button
                 onClick={handleDelete}
-                className="px-3 py-1.5 bg-red-500 text-white text-sm rounded-lg hover:bg-red-600 transition-colors"
+                disabled={deleting}
+                className="px-3 py-1.5 bg-red-500 text-white text-sm rounded-lg hover:bg-red-600 transition-colors disabled:opacity-60 flex items-center gap-1.5"
               >
-                Sí, eliminar
+                {deleting ? (
+                  <>
+                    <svg className="animate-spin w-3.5 h-3.5" viewBox="0 0 24 24" fill="none">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
+                    </svg>
+                    Eliminando...
+                  </>
+                ) : (
+                  'Sí, eliminar'
+                )}
               </button>
               <button
                 onClick={() => setConfirmDelete(false)}
-                className="px-3 py-1.5 bg-gray-100 text-gray-600 text-sm rounded-lg hover:bg-gray-200 transition-colors"
+                disabled={deleting}
+                className="px-3 py-1.5 bg-gray-100 text-gray-600 text-sm rounded-lg hover:bg-gray-200 transition-colors disabled:opacity-60"
               >
                 Cancelar
               </button>

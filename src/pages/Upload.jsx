@@ -4,17 +4,10 @@ import { useGallery } from '../context/GalleryContext'
 import Layout from '../components/Layout'
 import { MONTHS, YEARS } from '../utils/constants'
 import { Upload as UploadIcon, X, ImagePlus, CheckCircle2 } from 'lucide-react'
+import { storage } from '../utils/firebase'
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage'
 
 const MAX_PHOTOS = 10
-
-function toBase64(file) {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader()
-    reader.onload = () => resolve(reader.result)
-    reader.onerror = reject
-    reader.readAsDataURL(file)
-  })
-}
 
 export default function Upload() {
   const { addPost } = useGallery()
@@ -28,24 +21,23 @@ export default function Upload() {
     month: today.getMonth() + 1,
     year: today.getFullYear(),
   })
-  const [photos, setPhotos] = useState([]) // { file, preview }
+  const [photos, setPhotos] = useState([]) // { file, preview, id }
   const [dragging, setDragging] = useState(false)
   const [loading, setLoading] = useState(false)
+  const [uploadProgress, setUploadProgress] = useState(0)
   const [success, setSuccess] = useState(false)
   const [errors, setErrors] = useState({})
 
   const addFiles = useCallback(
-    async (files) => {
+    (files) => {
       const remaining = MAX_PHOTOS - photos.length
       if (remaining <= 0) return
       const toAdd = Array.from(files).slice(0, remaining)
-      const processed = await Promise.all(
-        toAdd.map(async (file) => ({
-          file,
-          preview: await toBase64(file),
-          id: `${Date.now()}-${Math.random()}`,
-        }))
-      )
+      const processed = toAdd.map((file) => ({
+        file,
+        preview: URL.createObjectURL(file),
+        id: `${Date.now()}-${Math.random()}`,
+      }))
       setPhotos((prev) => [...prev, ...processed])
     },
     [photos.length]
@@ -62,13 +54,27 @@ export default function Upload() {
     addFiles(e.dataTransfer.files)
   }
 
-  const removePhoto = (id) => setPhotos((prev) => prev.filter((p) => p.id !== id))
+  const removePhoto = (id) => {
+    setPhotos((prev) => {
+      const photo = prev.find((p) => p.id === id)
+      if (photo) URL.revokeObjectURL(photo.preview)
+      return prev.filter((p) => p.id !== id)
+    })
+  }
 
   const validate = () => {
     const errs = {}
     if (!form.title.trim()) errs.title = 'El título es obligatorio'
     if (photos.length === 0) errs.photos = 'Añade al menos una foto'
     return errs
+  }
+
+  const uploadPhoto = async (photo, index) => {
+    const ext = photo.file.name.split('.').pop()
+    const filename = `posts/${Date.now()}-${index}.${ext}`
+    const storageRef = ref(storage, filename)
+    await uploadBytes(storageRef, photo.file)
+    return getDownloadURL(storageRef)
   }
 
   const handleSubmit = async (e) => {
@@ -80,19 +86,37 @@ export default function Upload() {
     }
     setErrors({})
     setLoading(true)
-    // Pequeña pausa para mostrar el estado de carga
-    await new Promise((r) => setTimeout(r, 400))
-    addPost({
-      title: form.title.trim(),
-      description: form.description.trim(),
-      month: Number(form.month),
-      year: Number(form.year),
-      photos: photos.map((p) => p.preview),
-    })
-    setLoading(false)
-    setSuccess(true)
-    await new Promise((r) => setTimeout(r, 1200))
-    navigate('/')
+    setUploadProgress(0)
+
+    try {
+      // Subir fotos a Storage una a una y actualizar progreso
+      const urls = []
+      for (let i = 0; i < photos.length; i++) {
+        const url = await uploadPhoto(photos[i], i)
+        urls.push(url)
+        setUploadProgress(Math.round(((i + 1) / photos.length) * 100))
+      }
+
+      // Guardar el post en Firestore con las URLs de Storage
+      await addPost({
+        title: form.title.trim(),
+        description: form.description.trim(),
+        month: Number(form.month),
+        year: Number(form.year),
+        photos: urls,
+      })
+
+      setSuccess(true)
+      // Liberar URLs de objeto locales
+      photos.forEach((p) => URL.revokeObjectURL(p.preview))
+      await new Promise((r) => setTimeout(r, 1200))
+      navigate('/')
+    } catch (err) {
+      console.error('Error subiendo el post:', err)
+      setErrors({ submit: 'Hubo un error al subir las fotos. Inténtalo de nuevo.' })
+      setLoading(false)
+      setUploadProgress(0)
+    }
   }
 
   return (
@@ -246,12 +270,36 @@ export default function Upload() {
             )}
           </div>
 
+          {/* Error de envío */}
+          {errors.submit && (
+            <div className="bg-red-50 border border-red-200 text-red-600 text-sm px-4 py-3 rounded-xl">
+              {errors.submit}
+            </div>
+          )}
+
+          {/* Barra de progreso durante la subida */}
+          {loading && !success && (
+            <div className="space-y-2">
+              <div className="flex justify-between text-xs text-gray-400">
+                <span>Subiendo fotos...</span>
+                <span>{uploadProgress}%</span>
+              </div>
+              <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
+                <div
+                  className="h-full rounded-full bg-gradient-to-r from-pink-400 to-purple-500 transition-all duration-300"
+                  style={{ width: `${uploadProgress}%` }}
+                />
+              </div>
+            </div>
+          )}
+
           {/* Botones */}
           <div className="flex gap-3">
             <button
               type="button"
               onClick={() => navigate(-1)}
-              className="flex-1 py-3 rounded-xl border border-gray-200 text-gray-500 font-medium hover:bg-gray-50 transition-all"
+              disabled={loading}
+              className="flex-1 py-3 rounded-xl border border-gray-200 text-gray-500 font-medium hover:bg-gray-50 transition-all disabled:opacity-50"
             >
               Cancelar
             </button>
@@ -270,7 +318,7 @@ export default function Upload() {
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
                   </svg>
-                  Guardando...
+                  Subiendo...
                 </span>
               ) : (
                 'Publicar post'

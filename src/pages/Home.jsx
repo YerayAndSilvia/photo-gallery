@@ -123,7 +123,7 @@ function YearSection({ year, months }) {
 }
 
 export default function Home() {
-  const { getPostsByYear } = useGallery()
+  const { getPostsByYear, loading } = useGallery()
   const grouped = getPostsByYear()
   const years = Object.keys(grouped).sort((a, b) => Number(b) - Number(a))
 
@@ -146,7 +146,15 @@ export default function Home() {
         </div>
 
         {/* Contenido */}
-        {years.length === 0 ? (
+        {loading ? (
+          <div className="flex flex-col items-center justify-center py-24 gap-4">
+            <svg className="animate-spin w-8 h-8 text-pink-400" viewBox="0 0 24 24" fill="none">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
+            </svg>
+            <p className="text-gray-400 text-sm">Cargando recuerdos...</p>
+          </div>
+        ) : years.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-24 space-y-4">
             <div className="w-20 h-20 bg-gradient-to-br from-pink-100 to-purple-100 rounded-full flex items-center justify-center">
               <ImageIcon className="w-9 h-9 text-pink-300" />
