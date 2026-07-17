@@ -422,7 +422,7 @@ export default function Home() {
           <div style={{ opacity: introDone ? 1 : 0, transition: 'opacity 0.3s ease' }}>
             <p className="text-[11px] font-semibold text-pink-400/80 uppercase tracking-[0.2em] mb-2">Álbum personal</p>
             <h1 className="font-display font-black text-4xl sm:text-5xl leading-none" style={{ color: 'var(--text)' }}>
-              Nuestra<br />Galería
+              Nuestros<br />Recuerdos
             </h1>
           </div>
           <Link to="/upload"

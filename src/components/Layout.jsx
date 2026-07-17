@@ -3,6 +3,7 @@ import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { PlusCircle, LayoutGrid, LogOut, CalendarDays, Pencil, Trash2, Heart } from 'lucide-react'
 import ThemeToggle from './ThemeToggle'
+import HeartsBackground from './HeartsBackground'
 
 function toBase64(file) {
   return new Promise((resolve, reject) => {
@@ -95,6 +96,7 @@ export default function Layout({ children }) {
 
   return (
     <div className="min-h-screen flex" style={{ background: 'var(--bg)' }}>
+      {isSilvia && <HeartsBackground />}
       <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
 
       {/* ── Sidebar desktop ─────────────────────────────── */}
@@ -107,8 +109,8 @@ export default function Layout({ children }) {
             <Heart className="w-4 h-4 text-white fill-white" />
           </div>
           <div className="leading-none">
-            <p className="font-display font-black text-sm" style={{ color: 'var(--text)' }}>Nuestra</p>
-            <p className="font-display font-black text-sm" style={{ color: 'var(--text)' }}>Galería{isSilvia ? ' 💕' : ''}</p>
+            <p className="font-display font-black text-sm" style={{ color: 'var(--text)' }}>Nuestros</p>
+            <p className="font-display font-black text-sm" style={{ color: 'var(--text)' }}>Recuerdos{isSilvia ? ' 💕' : ''}</p>
           </div>
         </Link>
 
@@ -175,7 +177,7 @@ export default function Layout({ children }) {
               <Heart className="w-3.5 h-3.5 text-white fill-white" />
             </div>
             <span className="font-display font-black text-sm" style={{ color: 'var(--text)' }}>
-              {isSilvia ? 'Nuestra Galería 💕' : 'Nuestra Galería'}
+              {isSilvia ? 'Nuestros Recuerdos 💕' : 'Nuestros Recuerdos'}
             </span>
           </Link>
           <div className="flex items-center gap-1">
@@ -201,7 +203,7 @@ export default function Layout({ children }) {
         </main>
 
         <footer className="text-center py-5 text-[11px] font-display" style={{ color: 'var(--text-faint)' }}>
-          {isSilvia ? '💕 Hecho con mucho amor para Silvia 💕' : 'Hecho con 💕 para Yeray y Silvia'}
+          {'💕 Hecho con amor para guardar nuestros recuerdos 💕'}
         </footer>
       </div>
 

@@ -51,7 +51,7 @@ export default function Login() {
             <span className="text-xl">💕</span>
           </div>
           <h1 className="font-display font-black text-3xl leading-tight" style={{ color: 'var(--text)' }}>
-            Nuestra Galería
+            Nuestros Recuerdos
           </h1>
           <p className="text-sm mt-1.5" style={{ color: 'var(--text-faint)' }}>Solo para vosotros dos</p>
         </div>
