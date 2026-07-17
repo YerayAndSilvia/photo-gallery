@@ -95,7 +95,7 @@ export default function Layout({ children }) {
   }
 
   return (
-    <div className="min-h-screen flex" style={{ background: 'var(--bg)' }}>
+    <div className="min-h-screen flex">
       {isSilvia && <HeartsBackground />}
       <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
 
@@ -108,10 +108,9 @@ export default function Layout({ children }) {
           <div className="w-8 h-8 bg-gradient-to-br from-pink-500 to-purple-600 rounded-lg flex items-center justify-center flex-shrink-0 group-hover:scale-105 transition-transform shadow-lg shadow-pink-500/20">
             <Heart className="w-4 h-4 text-white fill-white" />
           </div>
-          <div className="leading-none">
-            <p className="font-display font-black text-sm" style={{ color: 'var(--text)' }}>Nuestros</p>
-            <p className="font-display font-black text-sm" style={{ color: 'var(--text)' }}>Recuerdos{isSilvia ? ' 💕' : ''}</p>
-          </div>
+          <p className="font-display font-black text-sm leading-tight" style={{ color: 'var(--text)' }}>
+            Nuestros Recuerdos{isSilvia ? ' 💕' : ''}
+          </p>
         </Link>
 
         {/* Nav */}
