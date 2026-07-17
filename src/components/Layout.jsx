@@ -1,7 +1,8 @@
 import { useRef, useState } from 'react'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
-import { PlusCircle, LayoutGrid, LogOut, CalendarDays, Pencil, Trash2, Heart } from 'lucide-react'
+import { useTheme } from '../context/ThemeContext'
+import { PlusCircle, LayoutGrid, LogOut, CalendarDays, Pencil, Trash2, Heart, Sun, Moon } from 'lucide-react'
 
 function toBase64(file) {
   return new Promise((resolve, reject) => {
@@ -25,14 +26,17 @@ function ProfileAvatar({ user, onEdit, onRemove }) {
           <img
             src={user.profilePhoto}
             alt="perfil"
-            className="w-9 h-9 rounded-full object-cover ring-1 ring-white/20 group-hover:ring-pink-400/60 transition-all"
+            className="w-9 h-9 rounded-full object-cover ring-1 ring-black/10 group-hover:ring-pink-400/60 transition-all"
+            style={{ ringColor: 'var(--border)' }}
           />
         ) : (
-          <div className="w-9 h-9 bg-gradient-to-br from-pink-500 to-purple-600 rounded-full flex items-center justify-center text-white text-sm font-bold ring-1 ring-white/10 group-hover:ring-pink-400/60 transition-all">
+          <div className="w-9 h-9 bg-gradient-to-br from-pink-500 to-purple-600 rounded-full flex items-center justify-center text-white text-sm font-bold ring-1 group-hover:ring-pink-400/60 transition-all"
+            style={{ ringColor: 'var(--border)' }}>
             {user?.avatar}
           </div>
         )}
-        <span className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-[#161616] rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity border border-white/10">
+        <span className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+          style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
           <Pencil className="w-2 h-2 text-pink-400" />
         </span>
       </button>
@@ -40,10 +44,14 @@ function ProfileAvatar({ user, onEdit, onRemove }) {
       {open && (
         <>
           <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
-          <div className="absolute left-0 bottom-12 z-50 bg-[#1c1c1c] rounded-xl shadow-2xl border border-white/10 p-1.5 w-44">
+          <div className="absolute left-0 bottom-12 z-50 rounded-xl shadow-2xl p-1.5 w-44"
+            style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
             <button
               onClick={() => { setOpen(false); onEdit() }}
-              className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-white/60 hover:text-white hover:bg-white/5 rounded-lg transition-colors"
+              className="w-full flex items-center gap-2.5 px-3 py-2 text-sm rounded-lg transition-colors"
+              style={{ color: 'var(--text-muted)' }}
+              onMouseEnter={e => { e.currentTarget.style.background = 'var(--bg-hover)'; e.currentTarget.style.color = 'var(--text)' }}
+              onMouseLeave={e => { e.currentTarget.style.background = ''; e.currentTarget.style.color = 'var(--text-muted)' }}
             >
               <Pencil className="w-3.5 h-3.5" />
               {user?.profilePhoto ? 'Cambiar foto' : 'Subir foto'}
@@ -61,6 +69,31 @@ function ProfileAvatar({ user, onEdit, onRemove }) {
         </>
       )}
     </div>
+  )
+}
+
+function ThemeToggle({ compact = false }) {
+  const { theme, toggle } = useTheme()
+  const isDark = theme === 'dark'
+  return (
+    <button
+      onClick={toggle}
+      aria-label={isDark ? 'Activar modo claro' : 'Activar modo oscuro'}
+      className={`flex items-center justify-center rounded-xl transition-all ${
+        compact ? 'w-8 h-8' : 'w-full gap-2.5 px-3 py-2'
+      }`}
+      style={{ color: 'var(--text-muted)' }}
+      onMouseEnter={e => { e.currentTarget.style.background = 'var(--bg-hover)'; e.currentTarget.style.color = 'var(--text)' }}
+      onMouseLeave={e => { e.currentTarget.style.background = ''; e.currentTarget.style.color = 'var(--text-muted)' }}
+    >
+      {isDark
+        ? <Sun className={compact ? 'w-4 h-4' : 'w-4 h-4 flex-shrink-0'} />
+        : <Moon className={compact ? 'w-4 h-4' : 'w-4 h-4 flex-shrink-0'} />
+      }
+      {!compact && (
+        <span className="font-display font-bold text-sm">{isDark ? 'Modo claro' : 'Modo oscuro'}</span>
+      )}
+    </button>
   )
 }
 
@@ -85,11 +118,12 @@ export default function Layout({ children }) {
   }
 
   return (
-    <div className="min-h-screen bg-[#0e0e0e] flex">
+    <div className="min-h-screen flex" style={{ background: 'var(--bg)' }}>
       <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
 
       {/* ── Sidebar desktop ─────────────────────────────── */}
-      <aside className="hidden lg:flex flex-col fixed left-0 top-0 h-full w-56 bg-[#111] border-r border-white/[0.05] z-50 px-4 py-6">
+      <aside className="hidden lg:flex flex-col fixed left-0 top-0 h-full w-56 z-50 px-4 py-6"
+        style={{ background: 'var(--bg-surface)', borderRight: '1px solid var(--border)' }}>
 
         {/* Logo */}
         <Link to="/" className="flex items-center gap-2.5 mb-10 group">
@@ -97,8 +131,8 @@ export default function Layout({ children }) {
             <Heart className="w-4 h-4 text-white fill-white" />
           </div>
           <div className="leading-none">
-            <p className="font-display font-black text-white text-sm">Nuestra</p>
-            <p className="font-display font-black text-white text-sm">Galería{isSilvia ? ' 💕' : ''}</p>
+            <p className="font-display font-black text-sm" style={{ color: 'var(--text)' }}>Nuestra</p>
+            <p className="font-display font-black text-sm" style={{ color: 'var(--text)' }}>Galería{isSilvia ? ' 💕' : ''}</p>
           </div>
         </Link>
 
@@ -110,13 +144,15 @@ export default function Layout({ children }) {
               <Link
                 key={to}
                 to={to}
-                className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-150 group ${
-                  active
-                    ? 'bg-white/10 text-white'
-                    : 'text-white/35 hover:text-white/80 hover:bg-white/5'
-                }`}
+                className="flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-150 group"
+                style={{
+                  background: active ? 'var(--bg-hover)' : '',
+                  color: active ? 'var(--text)' : 'var(--text-muted)',
+                }}
+                onMouseEnter={e => { if (!active) { e.currentTarget.style.background = 'var(--bg-hover)'; e.currentTarget.style.color = 'var(--text)' } }}
+                onMouseLeave={e => { if (!active) { e.currentTarget.style.background = ''; e.currentTarget.style.color = 'var(--text-muted)' } }}
               >
-                <Icon className={`w-4 h-4 flex-shrink-0 ${active ? 'text-pink-400' : 'group-hover:text-white/60'}`} />
+                <Icon className={`w-4 h-4 flex-shrink-0 ${active ? 'text-pink-400' : ''}`} />
                 <span className="font-display font-bold text-sm">{label}</span>
                 {active && <span className="ml-auto w-1 h-1 rounded-full bg-pink-400" />}
               </Link>
@@ -125,21 +161,28 @@ export default function Layout({ children }) {
         </nav>
 
         {/* Footer sidebar */}
-        <div className="border-t border-white/[0.06] pt-4 space-y-3">
-          <div className="flex items-center gap-2.5">
+        <div className="pt-4 space-y-1" style={{ borderTop: '1px solid var(--border)' }}>
+          {/* Tema */}
+          <ThemeToggle />
+
+          <div className="flex items-center gap-2.5 px-3 py-2">
             <ProfileAvatar
               user={user}
               onEdit={() => fileInputRef.current?.click()}
               onRemove={() => updateProfilePhoto(null)}
             />
             <div className="min-w-0 flex-1">
-              <p className="font-display font-bold text-white text-sm leading-none truncate">{user?.username}</p>
-              <p className="text-white/25 text-[11px] mt-0.5">perfil</p>
+              <p className="font-display font-bold text-sm leading-none truncate" style={{ color: 'var(--text)' }}>{user?.username}</p>
+              <p className="text-[11px] mt-0.5" style={{ color: 'var(--text-faint)' }}>perfil</p>
             </div>
           </div>
+
           <button
             onClick={handleLogout}
-            className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-white/25 hover:text-white/60 hover:bg-white/5 transition-all text-sm group"
+            className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl transition-all text-sm group"
+            style={{ color: 'var(--text-faint)' }}
+            onMouseEnter={e => { e.currentTarget.style.background = 'var(--bg-hover)'; e.currentTarget.style.color = 'var(--text-muted)' }}
+            onMouseLeave={e => { e.currentTarget.style.background = ''; e.currentTarget.style.color = 'var(--text-faint)' }}
           >
             <LogOut className="w-4 h-4" />
             <span className="font-display font-bold text-sm">Salir</span>
@@ -147,24 +190,28 @@ export default function Layout({ children }) {
         </div>
       </aside>
 
-      {/* ── Topbar sm/md (tablet) ────────────────────────── */}
-      <header className="lg:hidden fixed top-0 left-0 right-0 z-50 bg-[#0e0e0e]/95 backdrop-blur-xl border-b border-white/[0.06] h-13">
+      {/* ── Topbar sm/md (tablet/móvil) ─────────────────── */}
+      <header className="lg:hidden fixed top-0 left-0 right-0 z-50 backdrop-blur-xl h-13"
+        style={{ background: 'color-mix(in srgb, var(--bg) 95%, transparent)', borderBottom: '1px solid var(--border)' }}>
         <div className="h-13 flex items-center justify-between px-4">
           <Link to="/" className="flex items-center gap-2 group">
             <div className="w-7 h-7 bg-gradient-to-br from-pink-500 to-purple-600 rounded-lg flex items-center justify-center group-hover:scale-105 transition-transform">
               <Heart className="w-3.5 h-3.5 text-white fill-white" />
             </div>
-            <span className="font-display font-black text-white text-sm">
+            <span className="font-display font-black text-sm" style={{ color: 'var(--text)' }}>
               {isSilvia ? 'Nuestra Galería 💕' : 'Nuestra Galería'}
             </span>
           </Link>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-1">
+            <ThemeToggle compact />
             <ProfileAvatar
               user={user}
               onEdit={() => fileInputRef.current?.click()}
               onRemove={() => updateProfilePhoto(null)}
             />
-            <button onClick={handleLogout} className="text-white/30 hover:text-white/60 transition-colors">
+            <button onClick={handleLogout} className="ml-1 transition-colors" style={{ color: 'var(--text-faint)' }}
+              onMouseEnter={e => e.currentTarget.style.color = 'var(--text-muted)'}
+              onMouseLeave={e => e.currentTarget.style.color = 'var(--text-faint)'}>
               <LogOut className="w-4 h-4" />
             </button>
           </div>
@@ -177,13 +224,14 @@ export default function Layout({ children }) {
           {children}
         </main>
 
-        <footer className="text-center py-5 text-[11px] text-white/10 font-display">
+        <footer className="text-center py-5 text-[11px] font-display" style={{ color: 'var(--text-faint)' }}>
           {isSilvia ? '💕 Hecho con mucho amor para Silvia 💕' : 'Hecho con 💕 para Yeray y Silvia'}
         </footer>
       </div>
 
       {/* ── Bottom nav móvil ─────────────────────────────── */}
-      <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-[#111]/95 backdrop-blur-xl border-t border-white/[0.06]">
+      <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-50 backdrop-blur-xl"
+        style={{ background: 'color-mix(in srgb, var(--bg-surface) 95%, transparent)', borderTop: '1px solid var(--border)' }}>
         <div className="flex">
           {navLinks.map(({ to, label, icon: Icon }) => {
             const active = location.pathname === to
@@ -191,9 +239,8 @@ export default function Layout({ children }) {
               <Link
                 key={to}
                 to={to}
-                className={`flex-1 flex flex-col items-center gap-1 py-3 transition-colors ${
-                  active ? 'text-white' : 'text-white/25'
-                }`}
+                className="flex-1 flex flex-col items-center gap-1 py-3 transition-colors"
+                style={{ color: active ? 'var(--text)' : 'var(--text-faint)' }}
               >
                 <Icon className={`w-5 h-5 ${active ? 'text-pink-400' : ''}`} />
                 <span className="font-display font-bold text-[10px]">{label}</span>

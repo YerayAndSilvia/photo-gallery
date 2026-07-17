@@ -65,7 +65,7 @@ export default function PostDetail() {
     return (
       <Layout>
         <div className="flex flex-col items-center justify-center py-24 gap-4">
-          <p className="text-white/40">Post no encontrado</p>
+          <p style={{ color: 'var(--text-muted)' }}>Post no encontrado</p>
           <Link to="/" className="text-pink-400 hover:text-pink-300 text-sm">← Volver</Link>
         </div>
       </Layout>
@@ -103,30 +103,37 @@ export default function PostDetail() {
         {/* Barra nav */}
         <div className="flex items-center justify-between">
           <button onClick={() => navigate(-1)}
-            className="flex items-center gap-2 text-sm text-white/40 hover:text-white transition-colors group">
+            className="flex items-center gap-2 text-sm transition-colors group"
+            style={{ color: 'var(--text-muted)' }}
+            onMouseEnter={e => e.currentTarget.style.color = 'var(--text)'}
+            onMouseLeave={e => e.currentTarget.style.color = 'var(--text-muted)'}>
             <ArrowLeft className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" />
             Volver
           </button>
 
           {confirmDelete ? (
             <div className="flex items-center gap-2">
-              <span className="text-sm text-white/40">¿Eliminar?</span>
+              <span className="text-sm" style={{ color: 'var(--text-muted)' }}>¿Eliminar?</span>
               <button onClick={handleDelete} disabled={deleting}
                 className="px-3 py-1.5 bg-red-500 text-white text-sm rounded-lg hover:bg-red-600 disabled:opacity-60 flex items-center gap-1.5 transition-colors">
-                {deleting ? <svg className="animate-spin w-3.5 h-3.5" viewBox="0 0 24 24" fill="none">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
-                </svg> : null}
+                {deleting
+                  ? <svg className="animate-spin w-3.5 h-3.5" viewBox="0 0 24 24" fill="none">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
+                    </svg>
+                  : null}
                 {deleting ? 'Borrando...' : 'Sí'}
               </button>
               <button onClick={() => setConfirmDelete(false)} disabled={deleting}
-                className="px-3 py-1.5 bg-white/10 text-white/70 text-sm rounded-lg hover:bg-white/15 transition-colors">
+                className="px-3 py-1.5 text-sm rounded-lg transition-colors"
+                style={{ background: 'var(--bg-hover)', color: 'var(--text-muted)' }}>
                 No
               </button>
             </div>
           ) : (
             <button onClick={() => setConfirmDelete(true)}
-              className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-white/25 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-all">
+              className="flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-lg transition-all hover:text-red-400 hover:bg-red-500/10"
+              style={{ color: 'var(--text-faint)' }}>
               <Trash2 className="w-4 h-4" />
               Eliminar
             </button>
@@ -142,7 +149,7 @@ export default function PostDetail() {
         {/* Info */}
         <div className="space-y-2">
           <div className="flex items-start justify-between gap-4">
-            <h1 className="font-display font-black text-3xl text-white leading-tight">
+            <h1 className="font-display font-black text-3xl leading-tight" style={{ color: 'var(--text)' }}>
               {post.title}
             </h1>
             <span className={`flex-shrink-0 text-xs px-3 py-1.5 rounded-full bg-gradient-to-r ${gradient} text-white font-semibold`}>
@@ -150,9 +157,11 @@ export default function PostDetail() {
             </span>
           </div>
           {post.description && (
-            <p className="text-white/45 leading-relaxed">{post.description}</p>
+            <p className="leading-relaxed" style={{ color: 'var(--text-muted)' }}>{post.description}</p>
           )}
-          <p className="text-white/20 text-xs">{photos.length} foto{photos.length !== 1 ? 's' : ''}</p>
+          <p className="text-xs" style={{ color: 'var(--text-faint)' }}>
+            {photos.length} foto{photos.length !== 1 ? 's' : ''}
+          </p>
         </div>
 
         {/* Thumbnails */}
@@ -160,12 +169,14 @@ export default function PostDetail() {
           <div className="flex gap-2 overflow-x-auto pb-1 snap-x">
             {photos.map((p, i) => (
               <button key={i} onClick={() => { setActiveThumb(i); setLightbox(i) }}
-                className={`flex-shrink-0 snap-start rounded-xl overflow-hidden transition-all duration-200 ${
-                  activeThumb === i
-                    ? 'ring-2 ring-pink-400 ring-offset-1 ring-offset-[#0e0e0e] scale-[1.04]'
-                    : 'opacity-50 hover:opacity-80'
-                }`}
-                style={{ width: 90, height: 64 }}>
+                className="flex-shrink-0 snap-start rounded-xl overflow-hidden transition-all duration-200"
+                style={{
+                  width: 90, height: 64,
+                  opacity: activeThumb === i ? 1 : 0.5,
+                  outline: activeThumb === i ? '2px solid #f472b6' : 'none',
+                  outlineOffset: '1px',
+                  transform: activeThumb === i ? 'scale(1.04)' : 'scale(1)',
+                }}>
                 <img src={p} alt="" className="w-full h-full object-cover" />
               </button>
             ))}
@@ -208,7 +219,9 @@ export default function PostDetail() {
             <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-1.5">
               {photos.map((_, i) => (
                 <button key={i} onClick={e => { e.stopPropagation(); setLightbox(i) }}
-                  className={`w-1.5 h-1.5 rounded-full transition-all ${i === lightbox ? 'bg-white scale-125' : 'bg-white/30 hover:bg-white/60'}`} />
+                  className={`w-1.5 h-1.5 rounded-full transition-all ${
+                    i === lightbox ? 'bg-white scale-125' : 'bg-white/30 hover:bg-white/60'
+                  }`} />
               ))}
             </div>
           )}

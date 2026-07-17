@@ -30,7 +30,8 @@ export default function Login() {
   if (showSilviaWelcome) return <SilviaWelcome onFinish={() => navigate('/')} />
 
   return (
-    <div className="min-h-screen bg-[#0e0e0e] flex items-center justify-center p-4 relative overflow-hidden">
+    <div className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden"
+      style={{ background: 'var(--bg)' }}>
       {/* Fondo atmosférico */}
       <div className="absolute inset-0 pointer-events-none">
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[400px] bg-pink-600/8 rounded-full blur-3xl" />
@@ -43,8 +44,10 @@ export default function Login() {
           <div className="inline-flex w-12 h-12 bg-gradient-to-br from-pink-500 to-purple-600 rounded-2xl items-center justify-center mb-5 shadow-lg shadow-pink-500/25">
             <span className="text-xl">💕</span>
           </div>
-          <h1 className="font-display font-black text-3xl text-white leading-tight">Nuestra Galería</h1>
-          <p className="text-white/30 text-sm mt-1.5">Solo para vosotros dos</p>
+          <h1 className="font-display font-black text-3xl leading-tight" style={{ color: 'var(--text)' }}>
+            Nuestra Galería
+          </h1>
+          <p className="text-sm mt-1.5" style={{ color: 'var(--text-faint)' }}>Solo para vosotros dos</p>
         </div>
 
         {/* Formulario */}
@@ -57,7 +60,7 @@ export default function Login() {
               onChange={e => setForm({ ...form, username: e.target.value })}
               placeholder="Usuario"
               required
-              className="w-full px-4 py-3 rounded-xl bg-white/[0.06] border border-white/[0.08] text-white placeholder:text-white/25 focus:outline-none focus:border-pink-500/60 focus:bg-white/[0.08] transition-all text-sm"
+              className="input-theme w-full px-4 py-3 rounded-xl text-sm"
             />
             <div className="relative">
               <input
@@ -67,21 +70,23 @@ export default function Login() {
                 onChange={e => setForm({ ...form, password: e.target.value })}
                 placeholder="Contraseña"
                 required
-                className="w-full px-4 py-3 pr-11 rounded-xl bg-white/[0.06] border border-white/[0.08] text-white placeholder:text-white/25 focus:outline-none focus:border-pink-500/60 focus:bg-white/[0.08] transition-all text-sm"
+                className="input-theme w-full px-4 py-3 pr-11 rounded-xl text-sm"
               />
               <button type="button" onClick={() => setShowPass(!showPass)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-white/30 hover:text-white/60 transition-colors">
+                className="absolute right-3 top-1/2 -translate-y-1/2 transition-colors"
+                style={{ color: 'var(--text-faint)' }}
+                onMouseEnter={e => e.currentTarget.style.color = 'var(--text-muted)'}
+                onMouseLeave={e => e.currentTarget.style.color = 'var(--text-faint)'}>
                 {showPass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
               </button>
             </div>
           </div>
 
-          {error && (
-            <p className="text-red-400 text-xs px-1">{error}</p>
-          )}
+          {error && <p className="text-red-400 text-xs px-1">{error}</p>}
 
           <button type="submit" disabled={loading}
-            className="w-full py-3 bg-white text-gray-900 font-semibold rounded-xl hover:bg-gray-100 active:scale-[0.98] transition-all disabled:opacity-50 text-sm shadow-lg mt-2">
+            className="w-full py-3 font-semibold rounded-xl active:scale-[0.98] transition-all disabled:opacity-50 text-sm shadow-lg mt-2"
+            style={{ background: 'var(--text)', color: 'var(--bg)' }}>
             {loading ? (
               <span className="flex items-center justify-center gap-2">
                 <svg className="animate-spin w-4 h-4" viewBox="0 0 24 24" fill="none">

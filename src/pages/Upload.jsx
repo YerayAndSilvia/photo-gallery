@@ -8,8 +8,7 @@ import { supabase, STORAGE_BUCKET } from '../utils/supabase'
 
 const MAX_PHOTOS = 10
 
-const inputClass = "w-full px-4 py-3 rounded-xl bg-white/[0.06] border border-white/[0.08] text-white placeholder:text-white/20 focus:outline-none focus:border-pink-500/50 focus:bg-white/[0.08] transition-all text-sm"
-const labelClass = "block text-xs font-semibold text-white/40 uppercase tracking-wider mb-2"
+const labelClass = "block text-xs font-semibold uppercase tracking-wider mb-2"
 
 export default function Upload() {
   const { addPost } = useGallery()
@@ -90,44 +89,44 @@ export default function Upload() {
       <div className="max-w-xl mx-auto space-y-8">
         <div>
           <p className="text-[11px] font-semibold text-pink-400/80 uppercase tracking-[0.2em] mb-2">Crear</p>
-          <h1 className="font-display font-black text-4xl text-white leading-none">Nuevo post</h1>
+          <h1 className="font-display font-black text-4xl leading-none" style={{ color: 'var(--text)' }}>Nuevo post</h1>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-5">
           {/* Título */}
           <div>
-            <label className={labelClass}>Título *</label>
+            <label className={labelClass} style={{ color: 'var(--text-muted)' }}>Título *</label>
             <input type="text" value={form.title}
               onChange={e => setForm({ ...form, title: e.target.value })}
               placeholder="Escapada a la playa..."
-              className={`${inputClass} ${errors.title ? 'border-red-500/50' : ''}`} />
+              className={`input-theme w-full px-4 py-3 rounded-xl text-sm ${errors.title ? 'border-red-500/50' : ''}`} />
             {errors.title && <p className="text-red-400 text-xs mt-1">{errors.title}</p>}
           </div>
 
           {/* Descripción */}
           <div>
-            <label className={labelClass}>Descripción</label>
+            <label className={labelClass} style={{ color: 'var(--text-muted)' }}>Descripción</label>
             <textarea value={form.description}
               onChange={e => setForm({ ...form, description: e.target.value })}
               placeholder="Cuenta algo sobre este momento..."
-              rows={2} className={`${inputClass} resize-none`} />
+              rows={2} className="input-theme w-full px-4 py-3 rounded-xl text-sm resize-none" />
           </div>
 
           {/* Mes / Año */}
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className={labelClass}>Mes</label>
+              <label className={labelClass} style={{ color: 'var(--text-muted)' }}>Mes</label>
               <select value={form.month}
                 onChange={e => setForm({ ...form, month: Number(e.target.value) })}
-                className={`${inputClass} cursor-pointer`}>
+                className="input-theme w-full px-4 py-3 rounded-xl text-sm cursor-pointer">
                 {MONTHS.map((m, i) => <option key={m} value={i + 1}>{m}</option>)}
               </select>
             </div>
             <div>
-              <label className={labelClass}>Año</label>
+              <label className={labelClass} style={{ color: 'var(--text-muted)' }}>Año</label>
               <select value={form.year}
                 onChange={e => setForm({ ...form, year: Number(e.target.value) })}
-                className={`${inputClass} cursor-pointer`}>
+                className="input-theme w-full px-4 py-3 rounded-xl text-sm cursor-pointer">
                 {YEARS.map(y => <option key={y} value={y}>{y}</option>)}
               </select>
             </div>
@@ -136,7 +135,11 @@ export default function Upload() {
           {/* Fotos */}
           <div>
             <div className="flex items-center justify-between mb-2">
-              <label className={labelClass}>Fotos * <span className="text-white/20 normal-case font-normal tracking-normal">({photos.length}/{MAX_PHOTOS})</span></label>
+              <label className={labelClass} style={{ color: 'var(--text-muted)' }}>
+                Fotos * <span className="normal-case font-normal tracking-normal" style={{ color: 'var(--text-faint)' }}>
+                  ({photos.length}/{MAX_PHOTOS})
+                </span>
+              </label>
               {errors.photos && <p className="text-red-400 text-xs">{errors.photos}</p>}
             </div>
 
@@ -146,15 +149,20 @@ export default function Upload() {
                 onDragLeave={() => setDragging(false)}
                 onDrop={e => { e.preventDefault(); setDragging(false); addFiles(e.dataTransfer.files) }}
                 onClick={() => fileInputRef.current?.click()}
-                className={`border-2 border-dashed rounded-xl p-8 flex flex-col items-center gap-3 cursor-pointer transition-all ${
-                  dragging ? 'border-pink-500/60 bg-pink-500/5' : 'border-white/10 hover:border-white/20 hover:bg-white/[0.02]'
-                }`}>
-                <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center">
-                  <ImagePlus className="w-5 h-5 text-white/30" />
+                className="border-2 border-dashed rounded-xl p-8 flex flex-col items-center gap-3 cursor-pointer transition-all"
+                style={{
+                  borderColor: dragging ? 'rgba(236,72,153,0.6)' : 'var(--border-input)',
+                  background: dragging ? 'rgba(236,72,153,0.05)' : 'transparent',
+                }}>
+                <div className="w-10 h-10 rounded-xl flex items-center justify-center"
+                  style={{ background: 'var(--bg-hover)' }}>
+                  <ImagePlus className="w-5 h-5" style={{ color: 'var(--text-muted)' }} />
                 </div>
                 <div className="text-center">
-                  <p className="text-sm text-white/50">Arrastra o <span className="text-pink-400">elige fotos</span></p>
-                  <p className="text-xs text-white/20 mt-0.5">JPG, PNG, WebP</p>
+                  <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
+                    Arrastra o <span className="text-pink-400">elige fotos</span>
+                  </p>
+                  <p className="text-xs mt-0.5" style={{ color: 'var(--text-faint)' }}>JPG, PNG, WebP</p>
                 </div>
                 <input ref={fileInputRef} type="file" multiple accept="image/*" className="hidden"
                   onChange={e => { addFiles(e.target.files); e.target.value = '' }} />
@@ -164,7 +172,8 @@ export default function Upload() {
             {photos.length > 0 && (
               <div className="grid grid-cols-4 gap-2 mt-3">
                 {photos.map((p, i) => (
-                  <div key={p.id} className="relative group aspect-square rounded-lg overflow-hidden bg-white/5">
+                  <div key={p.id} className="relative group aspect-square rounded-lg overflow-hidden"
+                    style={{ background: 'var(--bg-hover)' }}>
                     <img src={p.preview} alt="" className="w-full h-full object-cover" />
                     <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-all flex items-center justify-center">
                       <button type="button" onClick={() => removePhoto(p.id)}
@@ -188,10 +197,10 @@ export default function Upload() {
           {/* Progreso */}
           {loading && !success && (
             <div className="space-y-1.5">
-              <div className="flex justify-between text-xs text-white/30">
+              <div className="flex justify-between text-xs" style={{ color: 'var(--text-faint)' }}>
                 <span>Subiendo...</span><span>{progress}%</span>
               </div>
-              <div className="w-full h-1 bg-white/10 rounded-full overflow-hidden">
+              <div className="w-full h-1 rounded-full overflow-hidden" style={{ background: 'var(--bg-hover)' }}>
                 <div className="h-full rounded-full bg-gradient-to-r from-pink-500 to-purple-600 transition-all duration-300"
                   style={{ width: `${progress}%` }} />
               </div>
@@ -201,11 +210,15 @@ export default function Upload() {
           {/* Botones */}
           <div className="flex gap-3 pt-2">
             <button type="button" onClick={() => navigate(-1)} disabled={loading}
-              className="flex-1 py-3 rounded-xl border border-white/10 text-white/40 font-medium hover:bg-white/5 transition-all disabled:opacity-40 text-sm">
+              className="flex-1 py-3 rounded-xl font-medium transition-all disabled:opacity-40 text-sm"
+              style={{ border: '1px solid var(--border)', color: 'var(--text-muted)', background: 'transparent' }}
+              onMouseEnter={e => e.currentTarget.style.background = 'var(--bg-hover)'}
+              onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
               Cancelar
             </button>
             <button type="submit" disabled={loading || success}
-              className="flex-1 py-3 bg-white text-gray-900 font-semibold rounded-xl hover:bg-gray-100 active:scale-[0.98] transition-all disabled:opacity-50 text-sm">
+              className="flex-1 py-3 font-semibold rounded-xl active:scale-[0.98] transition-all disabled:opacity-50 text-sm"
+              style={{ background: 'var(--text)', color: 'var(--bg)' }}>
               {success ? (
                 <span className="flex items-center justify-center gap-2">
                   <CheckCircle2 className="w-4 h-4 text-green-600" /> ¡Guardado!

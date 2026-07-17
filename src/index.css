@@ -1,21 +1,68 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@700;900&display=swap');
 @import "tailwindcss";
 
+/* ── Tokens de color ─────────────────────────────────────────────────────── */
+/* Modo oscuro (defecto) */
+:root {
+  --bg:           #0e0e0e;
+  --bg-surface:   #111111;
+  --bg-card:      #161616;
+  --bg-input:     rgba(255,255,255,0.06);
+  --bg-input-focus: rgba(255,255,255,0.08);
+  --bg-hover:     rgba(255,255,255,0.05);
+  --bg-modal:     #161616;
+
+  --border:       rgba(255,255,255,0.05);
+  --border-input: rgba(255,255,255,0.08);
+
+  --text:         #f0f0f0;
+  --text-muted:   rgba(255,255,255,0.40);
+  --text-faint:   rgba(255,255,255,0.20);
+  --text-placeholder: rgba(255,255,255,0.20);
+
+  --scrollbar:    #333;
+  --scrollbar-hover: #555;
+}
+
+/* Modo claro */
+html.light {
+  --bg:           #f5f3f0;
+  --bg-surface:   #eeebe6;
+  --bg-card:      #ffffff;
+  --bg-input:     rgba(0,0,0,0.04);
+  --bg-input-focus: rgba(0,0,0,0.07);
+  --bg-hover:     rgba(0,0,0,0.04);
+  --bg-modal:     #ffffff;
+
+  --border:       rgba(0,0,0,0.07);
+  --border-input: rgba(0,0,0,0.10);
+
+  --text:         #1a1a1a;
+  --text-muted:   rgba(0,0,0,0.45);
+  --text-faint:   rgba(0,0,0,0.25);
+  --text-placeholder: rgba(0,0,0,0.25);
+
+  --scrollbar:    #ccc;
+  --scrollbar-hover: #aaa;
+}
+
+/* ── Base ────────────────────────────────────────────────────────────────── */
 * { box-sizing: border-box; }
 
 body {
   font-family: 'Inter', system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
-  background: #0e0e0e;
-  color: #f0f0f0;
+  background: var(--bg);
+  color: var(--text);
+  transition: background 0.25s ease, color 0.25s ease;
 }
 
 .font-display { font-family: 'Playfair Display', serif; }
 
 ::-webkit-scrollbar { width: 4px; height: 4px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: #333; border-radius: 999px; }
-::-webkit-scrollbar-thumb:hover { background: #555; }
+::-webkit-scrollbar-thumb { background: var(--scrollbar); border-radius: 999px; }
+::-webkit-scrollbar-thumb:hover { background: var(--scrollbar-hover); }
 
 .line-clamp-1 {
   display: -webkit-box;
@@ -28,4 +75,32 @@ body {
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
+}
+
+/* ── Clases de conveniencia para los tokens ──────────────────────────────── */
+/* Usadas en los componentes para no repetir style={{ }} inline */
+.bg-theme          { background: var(--bg); }
+.bg-theme-surface  { background: var(--bg-surface); }
+.bg-theme-card     { background: var(--bg-card); }
+.bg-theme-input    { background: var(--bg-input); }
+.bg-theme-hover:hover { background: var(--bg-hover); }
+
+.border-theme      { border-color: var(--border); }
+.border-theme-input { border-color: var(--border-input); }
+
+.text-theme        { color: var(--text); }
+.text-theme-muted  { color: var(--text-muted); }
+.text-theme-faint  { color: var(--text-faint); }
+
+.input-theme {
+  background: var(--bg-input);
+  border: 1px solid var(--border-input);
+  color: var(--text);
+  transition: background 0.2s, border-color 0.2s;
+}
+.input-theme::placeholder { color: var(--text-placeholder); }
+.input-theme:focus {
+  background: var(--bg-input-focus);
+  border-color: rgba(236, 72, 153, 0.5);
+  outline: none;
 }
