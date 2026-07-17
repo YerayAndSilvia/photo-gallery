@@ -4,8 +4,7 @@ import { useGallery } from '../context/GalleryContext'
 import Layout from '../components/Layout'
 import { MONTHS, MONTH_COLORS } from '../utils/constants'
 import { ArrowLeft, Trash2, ChevronLeft, ChevronRight, X, Calendar } from 'lucide-react'
-import { storage } from '../utils/firebase'
-import { ref, deleteObject } from 'firebase/storage'
+import { supabase, STORAGE_BUCKET } from '../utils/supabase'
 
 export default function PostDetail() {
   const { id } = useParams()
@@ -35,21 +34,20 @@ export default function PostDetail() {
   const handleDelete = async () => {
     setDeleting(true)
     try {
-      // Eliminar cada foto de Firebase Storage
+      // Extraer la ruta del archivo desde la URL pública de Supabase Storage y eliminarla
       if (post.photos?.length > 0) {
-        await Promise.all(
-          post.photos.map(async (url) => {
-            try {
-              // Extraer la ruta del archivo desde la URL de Storage
-              const storageRef = ref(storage, url)
-              await deleteObject(storageRef)
-            } catch {
-              // Si la foto ya no existe en Storage, continuamos igualmente
-            }
-          })
-        )
+        const paths = post.photos.map((url) => {
+          // La URL pública tiene formato: .../storage/v1/object/public/photos/posts/filename.ext
+          const marker = `/object/public/${STORAGE_BUCKET}/`
+          const idx = url.indexOf(marker)
+          return idx !== -1 ? url.slice(idx + marker.length) : null
+        }).filter(Boolean)
+
+        if (paths.length > 0) {
+          await supabase.storage.from(STORAGE_BUCKET).remove(paths)
+        }
       }
-      // Eliminar el documento de Firestore
+      // Eliminar el post de la base de datos
       await deletePost(id)
       navigate('/')
     } catch (err) {

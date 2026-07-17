@@ -1,57 +1,52 @@
 import { createContext, useContext, useState, useCallback, useEffect } from 'react'
-import {
-  collection,
-  onSnapshot,
-  addDoc,
-  deleteDoc,
-  updateDoc,
-  doc,
-  serverTimestamp,
-  query,
-  orderBy,
-} from 'firebase/firestore'
-import { db } from '../utils/firebase'
+import { supabase } from '../utils/supabase'
 
 const GalleryContext = createContext(null)
-
-const POSTS_COLLECTION = 'posts'
 
 export function GalleryProvider({ children }) {
   const [posts, setPosts] = useState([])
   const [loading, setLoading] = useState(true)
 
-  // Escucha en tiempo real — cualquier cambio en Firestore actualiza el estado
-  useEffect(() => {
-    const q = query(
-      collection(db, POSTS_COLLECTION),
-      orderBy('createdAt', 'desc')
-    )
+  // Carga inicial de posts
+  const fetchPosts = useCallback(async () => {
+    const { data, error } = await supabase
+      .from('posts')
+      .select('*')
+      .order('created_at', { ascending: false })
 
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const docs = snapshot.docs.map((d) => ({
-        id: d.id,
-        ...d.data(),
-      }))
-      setPosts(docs)
-      setLoading(false)
-    })
-
-    return () => unsubscribe()
+    if (!error) setPosts(data || [])
+    setLoading(false)
   }, [])
 
+  useEffect(() => {
+    fetchPosts()
+
+    // Suscripción en tiempo real — cualquier INSERT, UPDATE o DELETE actualiza la lista
+    const channel = supabase
+      .channel('posts-changes')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'posts' },
+        () => fetchPosts()
+      )
+      .subscribe()
+
+    return () => supabase.removeChannel(channel)
+  }, [fetchPosts])
+
   const addPost = useCallback(async (post) => {
-    await addDoc(collection(db, POSTS_COLLECTION), {
-      ...post,
-      createdAt: serverTimestamp(),
-    })
+    const { error } = await supabase.from('posts').insert([post])
+    if (error) throw error
   }, [])
 
   const deletePost = useCallback(async (id) => {
-    await deleteDoc(doc(db, POSTS_COLLECTION, id))
+    const { error } = await supabase.from('posts').delete().eq('id', id)
+    if (error) throw error
   }, [])
 
   const updatePost = useCallback(async (id, changes) => {
-    await updateDoc(doc(db, POSTS_COLLECTION, id), changes)
+    const { error } = await supabase.from('posts').update(changes).eq('id', id)
+    if (error) throw error
   }, [])
 
   // Agrupa posts por año y mes

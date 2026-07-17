@@ -4,8 +4,7 @@ import { useGallery } from '../context/GalleryContext'
 import Layout from '../components/Layout'
 import { MONTHS, YEARS } from '../utils/constants'
 import { Upload as UploadIcon, X, ImagePlus, CheckCircle2 } from 'lucide-react'
-import { storage } from '../utils/firebase'
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage'
+import { supabase, STORAGE_BUCKET } from '../utils/supabase'
 
 const MAX_PHOTOS = 10
 
@@ -72,9 +71,18 @@ export default function Upload() {
   const uploadPhoto = async (photo, index) => {
     const ext = photo.file.name.split('.').pop()
     const filename = `posts/${Date.now()}-${index}.${ext}`
-    const storageRef = ref(storage, filename)
-    await uploadBytes(storageRef, photo.file)
-    return getDownloadURL(storageRef)
+
+    const { error } = await supabase.storage
+      .from(STORAGE_BUCKET)
+      .upload(filename, photo.file, { upsert: false })
+
+    if (error) throw error
+
+    const { data } = supabase.storage
+      .from(STORAGE_BUCKET)
+      .getPublicUrl(filename)
+
+    return data.publicUrl
   }
 
   const handleSubmit = async (e) => {
@@ -89,7 +97,7 @@ export default function Upload() {
     setUploadProgress(0)
 
     try {
-      // Subir fotos a Storage una a una y actualizar progreso
+      // Subir fotos a Storage una a una
       const urls = []
       for (let i = 0; i < photos.length; i++) {
         const url = await uploadPhoto(photos[i], i)
@@ -97,7 +105,7 @@ export default function Upload() {
         setUploadProgress(Math.round(((i + 1) / photos.length) * 100))
       }
 
-      // Guardar el post en Firestore con las URLs de Storage
+      // Guardar el post en la base de datos con las URLs públicas
       await addPost({
         title: form.title.trim(),
         description: form.description.trim(),
@@ -107,7 +115,6 @@ export default function Upload() {
       })
 
       setSuccess(true)
-      // Liberar URLs de objeto locales
       photos.forEach((p) => URL.revokeObjectURL(p.preview))
       await new Promise((r) => setTimeout(r, 1200))
       navigate('/')
@@ -277,7 +284,7 @@ export default function Upload() {
             </div>
           )}
 
-          {/* Barra de progreso durante la subida */}
+          {/* Barra de progreso */}
           {loading && !success && (
             <div className="space-y-2">
               <div className="flex justify-between text-xs text-gray-400">
