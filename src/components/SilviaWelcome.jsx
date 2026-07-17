@@ -132,7 +132,7 @@ export default function SilviaWelcome({ onFinish }) {
         {/* Carga */}
         <div className="flex flex-col items-center gap-3">
           <HeartLoader progress={progress} />
-          <p className="text-xs text-white/30 tracking-widest uppercase">Cargando vuestra galería</p>
+          <p className="text-xs text-white/30 tracking-widest uppercase">Nuestros Recuerdos</p>
         </div>
       </div>
 

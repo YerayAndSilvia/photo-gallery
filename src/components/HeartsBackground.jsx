@@ -24,7 +24,7 @@ export default function HeartsBackground() {
   ]
 
   return (
-    <div className="fixed inset-0 pointer-events-none overflow-hidden z-0" aria-hidden="true">
+    <div className="fixed inset-0 pointer-events-none overflow-hidden" style={{ zIndex: 5 }} aria-hidden="true">
       {hearts.map((h, i) => (
         <span
           key={i}
@@ -35,7 +35,6 @@ export default function HeartsBackground() {
             fontSize: h.size,
             opacity: h.opacity,
             transform: `rotate(${h.rotate}deg)`,
-            filter: 'blur(0.3px)',
           }}
         >
           {h.emoji}

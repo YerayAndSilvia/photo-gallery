@@ -202,7 +202,7 @@ export default function Layout({ children }) {
         </main>
 
         <footer className="text-center py-5 text-[11px] font-display" style={{ color: 'var(--text-faint)' }}>
-          {'💕 Hecho con amor para guardar nuestros recuerdos 💕'}
+          {isSilvia ? '💕 Hecho con amor para mi Mongola 💕' : '💕 Hecho con amor para guardar nuestros recuerdos 💕'}
         </footer>
       </div>
 
