@@ -118,6 +118,7 @@ export default function Upload() {
       photos.forEach((p) => URL.revokeObjectURL(p.preview))
       await new Promise((r) => setTimeout(r, 1200))
       navigate('/')
+      window.location.reload()
     } catch (err) {
       console.error('Error subiendo el post:', err)
       setErrors({ submit: 'Hubo un error al subir las fotos. Inténtalo de nuevo.' })

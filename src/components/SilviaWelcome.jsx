@@ -1,26 +1,59 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 
 const PHRASES = [
-  '❤️ Recuerda que te quiero mucho ❤️',
-  '💕 Te quiero para siempre 💕',
-  '💖 Eres la mejor 💖',
-  '💝 Eres mi mongola 💝',
+  { text: 'Te quiero mucho', emoji: '❤️' },
+  { text: 'Eres la mejor', emoji: '💖' },
+  { text: 'La más preciosa', emoji: '💕' },
+  { text: 'La más bella', emoji: '💗' },
+  { text: 'Mi mongola', emoji: '💝' },
+  { text: 'Te quiero para siempre', emoji: '💓' },
+  { text: 'Recuerda que te quiero', emoji: '🌸' },
 ]
 
-// Corazones posicionados en círculo
-const HEART_COUNT = 12
-const RADIUS = 110
-
-function HeartCircle() {
+// Corazón SVG animado para la barra de carga
+function HeartLoader({ progress }) {
   return (
-    <div className="relative flex items-center justify-center" style={{ width: 280, height: 280 }}>
-      {/* Corazones orbitando */}
+    <div className="flex flex-col items-center gap-2 w-64">
+      {/* Fila de corazones que se van llenando */}
+      <div className="flex gap-1.5 items-center">
+        {Array.from({ length: 10 }).map((_, i) => {
+          const filled = i < Math.round(progress / 10)
+          return (
+            <span
+              key={i}
+              className="text-xl select-none transition-all duration-300"
+              style={{
+                opacity: filled ? 1 : 0.2,
+                transform: filled ? 'scale(1.15)' : 'scale(1)',
+                filter: filled ? 'drop-shadow(0 0 4px rgba(236,72,153,0.7))' : 'none',
+              }}
+            >
+              {filled ? '❤️' : '🤍'}
+            </span>
+          )
+        })}
+      </div>
+      <p className="text-xs text-pink-300">{Math.round(progress)}%</p>
+    </div>
+  )
+}
+
+// Corazones orbitando en círculo
+const HEART_COUNT = 14
+const RADIUS = 115
+
+function HeartOrbit() {
+  return (
+    <div className="relative flex items-center justify-center" style={{ width: 300, height: 300 }}>
       {Array.from({ length: HEART_COUNT }).map((_, i) => {
         const angle = (i / HEART_COUNT) * 2 * Math.PI - Math.PI / 2
         const x = Math.cos(angle) * RADIUS
         const y = Math.sin(angle) * RADIUS
-        const delay = (i / HEART_COUNT) * 2
-        const size = i % 3 === 0 ? 'text-2xl' : i % 3 === 1 ? 'text-xl' : 'text-lg'
+        const delay = (i / HEART_COUNT) * 2.4
+        const emojis = ['❤️', '💕', '💖', '💗', '💝', '💓', '🌸']
+        const emoji = emojis[i % emojis.length]
+        const sizes = ['text-xl', 'text-2xl', 'text-lg']
+        const size = sizes[i % sizes.length]
         return (
           <span
             key={i}
@@ -29,19 +62,19 @@ function HeartCircle() {
               left: `calc(50% + ${x}px)`,
               top: `calc(50% + ${y}px)`,
               transform: 'translate(-50%, -50%)',
-              animation: `heartbeat 1.5s ease-in-out ${delay}s infinite`,
+              animation: `heartPulse 1.8s ease-in-out ${delay}s infinite`,
             }}
           >
-            {i % 4 === 0 ? '❤️' : i % 4 === 1 ? '💕' : i % 4 === 2 ? '💖' : '💝'}
+            {emoji}
           </span>
         )
       })}
 
-      {/* Centro */}
-      <div className="relative z-10 flex flex-col items-center gap-2">
+      {/* Corazón central grande */}
+      <div className="relative z-10 flex flex-col items-center">
         <span
-          className="text-6xl select-none"
-          style={{ animation: 'heartbeat 1s ease-in-out infinite' }}
+          className="text-7xl select-none"
+          style={{ animation: 'heartPulse 1s ease-in-out infinite' }}
         >
           💖
         </span>
@@ -51,12 +84,19 @@ function HeartCircle() {
 }
 
 export default function SilviaWelcome({ onFinish }) {
-  const [phrase] = useState(() => PHRASES[Math.floor(Math.random() * PHRASES.length)])
+  // Rotar por todas las frases en orden aleatorio
+  const order = useRef(
+    [...Array(PHRASES.length).keys()].sort(() => Math.random() - 0.5)
+  )
+  const [phraseIdx, setPhraseIdx] = useState(0)
+  const [phraseVisible, setPhraseVisible] = useState(true)
   const [progress, setProgress] = useState(0)
   const [fadeOut, setFadeOut] = useState(false)
 
-  const DURATION = 5000
+  const DURATION = 6000
+  const PHRASE_INTERVAL = DURATION / PHRASES.length
 
+  // Progreso
   useEffect(() => {
     const start = Date.now()
     const interval = setInterval(() => {
@@ -66,11 +106,25 @@ export default function SilviaWelcome({ onFinish }) {
       if (pct >= 100) {
         clearInterval(interval)
         setFadeOut(true)
-        setTimeout(onFinish, 600)
+        setTimeout(onFinish, 700)
       }
     }, 30)
     return () => clearInterval(interval)
   }, [onFinish])
+
+  // Rotar frases con fade
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setPhraseVisible(false)
+      setTimeout(() => {
+        setPhraseIdx((prev) => (prev + 1) % PHRASES.length)
+        setPhraseVisible(true)
+      }, 350)
+    }, PHRASE_INTERVAL)
+    return () => clearInterval(interval)
+  }, [])
+
+  const current = PHRASES[order.current[phraseIdx]]
 
   return (
     <div
@@ -78,59 +132,54 @@ export default function SilviaWelcome({ onFinish }) {
       style={{
         background: 'linear-gradient(135deg, #fdf2f8 0%, #fce7f3 30%, #f5d0fe 60%, #ede9fe 100%)',
         opacity: fadeOut ? 0 : 1,
-        transition: 'opacity 0.6s ease',
+        transition: 'opacity 0.7s ease',
       }}
     >
-      {/* Corazones flotantes de fondo */}
       <FloatingHearts />
 
-      <div className="relative flex flex-col items-center gap-8 px-8 text-center">
-        {/* Círculo de corazones */}
-        <HeartCircle />
+      <div className="relative flex flex-col items-center gap-6 px-8 text-center">
+        {/* Órbita de corazones */}
+        <HeartOrbit />
 
-        {/* Frase */}
-        <div className="max-w-xs">
+        {/* Frase con fade */}
+        <div
+          className="max-w-xs min-h-[4rem] flex flex-col items-center gap-1"
+          style={{
+            opacity: phraseVisible ? 1 : 0,
+            transform: phraseVisible ? 'translateY(0)' : 'translateY(8px)',
+            transition: 'opacity 0.35s ease, transform 0.35s ease',
+          }}
+        >
+          <span className="text-3xl">{current.emoji}</span>
           <p
             className="text-2xl font-bold text-pink-600 leading-snug"
-            style={{ animation: 'fadeInUp 0.8s ease forwards', textShadow: '0 2px 20px rgba(236,72,153,0.3)' }}
+            style={{ textShadow: '0 2px 20px rgba(236,72,153,0.3)' }}
           >
-            {phrase}
+            {current.text}
           </p>
+          <span className="text-3xl">{current.emoji}</span>
         </div>
 
-        {/* Nombre */}
-        <p className="text-lg text-pink-400 font-semibold">
+        {/* Saludo */}
+        <p className="text-lg text-pink-400 font-semibold -mt-2">
           ¡Hola Silvia! 💕
         </p>
 
-        {/* Barra de progreso */}
-        <div className="w-64 h-2 bg-pink-100 rounded-full overflow-hidden">
-          <div
-            className="h-full rounded-full"
-            style={{
-              width: `${progress}%`,
-              background: 'linear-gradient(90deg, #f472b6, #a855f7)',
-              transition: 'width 0.03s linear',
-            }}
-          />
-        </div>
+        {/* Carga en corazones */}
+        <HeartLoader progress={progress} />
 
-        <p className="text-xs text-pink-300">Cargando vuestra galería...</p>
+        <p className="text-xs text-pink-300 -mt-1">Cargando vuestra galería...</p>
       </div>
 
       <style>{`
-        @keyframes heartbeat {
+        @keyframes heartPulse {
           0%, 100% { transform: translate(-50%, -50%) scale(1); }
-          50% { transform: translate(-50%, -50%) scale(1.3); }
-        }
-        @keyframes fadeInUp {
-          from { opacity: 0; transform: translateY(20px); }
-          to { opacity: 1; transform: translateY(0); }
+          50% { transform: translate(-50%, -50%) scale(1.35); }
         }
         @keyframes floatHeart {
           0% { transform: translateY(100vh) rotate(0deg); opacity: 0; }
           10% { opacity: 1; }
-          90% { opacity: 0.6; }
+          90% { opacity: 0.5; }
           100% { transform: translateY(-20vh) rotate(360deg); opacity: 0; }
         }
       `}</style>
@@ -139,18 +188,20 @@ export default function SilviaWelcome({ onFinish }) {
 }
 
 function FloatingHearts() {
-  const hearts = Array.from({ length: 18 }).map((_, i) => ({
-    id: i,
-    left: `${Math.random() * 100}%`,
-    delay: `${Math.random() * 5}s`,
-    duration: `${4 + Math.random() * 4}s`,
-    size: ['text-sm', 'text-base', 'text-lg', 'text-xl', 'text-2xl'][Math.floor(Math.random() * 5)],
-    emoji: ['❤️', '💕', '💖', '💗', '💝', '💓'][Math.floor(Math.random() * 6)],
-  }))
+  const hearts = useRef(
+    Array.from({ length: 22 }).map((_, i) => ({
+      id: i,
+      left: `${(i * 4.5) % 100}%`,
+      delay: `${(i * 0.3) % 5}s`,
+      duration: `${4 + (i % 5)}s`,
+      size: ['text-sm', 'text-base', 'text-lg', 'text-xl', 'text-2xl'][i % 5],
+      emoji: ['❤️', '💕', '💖', '💗', '💝', '💓', '🌸'][i % 7],
+    }))
+  )
 
   return (
     <div className="absolute inset-0 overflow-hidden pointer-events-none">
-      {hearts.map((h) => (
+      {hearts.current.map((h) => (
         <span
           key={h.id}
           className={`absolute ${h.size} select-none`}

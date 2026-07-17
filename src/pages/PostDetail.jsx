@@ -50,6 +50,7 @@ export default function PostDetail() {
       // Eliminar el post de la base de datos
       await deletePost(id)
       navigate('/')
+      window.location.reload()
     } catch (err) {
       console.error('Error eliminando el post:', err)
       setDeleting(false)
