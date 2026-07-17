@@ -4,24 +4,32 @@ import { supabase } from '../utils/supabase'
 const GalleryContext = createContext(null)
 
 export function GalleryProvider({ children }) {
-  const [posts, setPosts] = useState([])
+  const [posts, setPosts]     = useState([])
   const [loading, setLoading] = useState(true)
+  const [error, setError]     = useState(null)
 
-  // Carga inicial de posts
   const fetchPosts = useCallback(async () => {
-    const { data, error } = await supabase
-      .from('posts')
-      .select('*')
-      .order('created_at', { ascending: false })
+    setError(null)
+    try {
+      const { data, error: supaErr } = await supabase
+        .from('posts')
+        .select('*')
+        .order('created_at', { ascending: false })
 
-    if (!error) setPosts(data || [])
-    setLoading(false)
+      if (supaErr) throw supaErr
+      setPosts(data ?? [])
+    } catch (err) {
+      console.error('[GalleryContext] fetchPosts:', err)
+      setError(err?.message ?? 'Error al cargar los posts')
+    } finally {
+      setLoading(false)
+    }
   }, [])
 
   useEffect(() => {
     fetchPosts()
 
-    // Suscripción en tiempo real — cualquier INSERT, UPDATE o DELETE actualiza la lista
+    // Tiempo real: cualquier cambio en la tabla recarga los posts
     const channel = supabase
       .channel('posts-changes')
       .on(
@@ -35,26 +43,27 @@ export function GalleryProvider({ children }) {
   }, [fetchPosts])
 
   const addPost = useCallback(async (post) => {
-    const { error } = await supabase.from('posts').insert([post])
-    if (error) throw error
+    const { error: supaErr } = await supabase.from('posts').insert([post])
+    if (supaErr) throw supaErr
   }, [])
 
   const deletePost = useCallback(async (id) => {
-    const { error } = await supabase.from('posts').delete().eq('id', id)
-    if (error) throw error
+    const { error: supaErr } = await supabase.from('posts').delete().eq('id', id)
+    if (supaErr) throw supaErr
+    // Actualizar estado local sin esperar al canal de tiempo real
+    setPosts((prev) => prev.filter((p) => p.id !== id))
   }, [])
 
   const updatePost = useCallback(async (id, changes) => {
-    const { error } = await supabase.from('posts').update(changes).eq('id', id)
-    if (error) throw error
+    const { error: supaErr } = await supabase.from('posts').update(changes).eq('id', id)
+    if (supaErr) throw supaErr
   }, [])
 
-  // Agrupa posts por año y mes
+  // Agrupa posts por año → mes
   const getPostsByYear = useCallback(() => {
     const grouped = {}
     posts.forEach((post) => {
-      const year = post.year
-      const month = post.month
+      const { year, month } = post
       if (!grouped[year]) grouped[year] = {}
       if (!grouped[year][month]) grouped[year][month] = []
       grouped[year][month].push(post)
@@ -63,7 +72,7 @@ export function GalleryProvider({ children }) {
   }, [posts])
 
   const getPostById = useCallback(
-    (id) => posts.find((p) => p.id === id),
+    (id) => posts.find((p) => String(p.id) === String(id)),
     [posts]
   )
 
@@ -77,6 +86,8 @@ export function GalleryProvider({ children }) {
       value={{
         posts,
         loading,
+        error,
+        refetch: fetchPosts,
         addPost,
         deletePost,
         updatePost,

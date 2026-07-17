@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useRef, useState, useEffect } from 'react'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { PlusCircle, LayoutGrid, LogOut, CalendarDays, Pencil, Trash2, Heart } from 'lucide-react'
@@ -16,53 +16,86 @@ function toBase64(file) {
 
 function ProfileAvatar({ user, onEdit, onRemove }) {
   const [open, setOpen] = useState(false)
+  const menuRef = useRef(null)
+  const triggerRef = useRef(null)
+
+  // Cerrar al hacer clic fuera o presionar Escape
+  useEffect(() => {
+    if (!open) return
+    const handleKey = (e) => { if (e.key === 'Escape') setOpen(false) }
+    window.addEventListener('keydown', handleKey)
+    return () => window.removeEventListener('keydown', handleKey)
+  }, [open])
+
   return (
-    <div className="relative">
+    <div className="relative" ref={menuRef}>
       <button
+        ref={triggerRef}
         onClick={() => setOpen(o => !o)}
         className="relative group focus:outline-none"
-        aria-label="Perfil"
+        aria-label="Opciones de perfil"
+        aria-expanded={open}
+        aria-haspopup="menu"
       >
         {user?.profilePhoto ? (
           <img
             src={user.profilePhoto}
-            alt="perfil"
+            alt={`Avatar de ${user.username}`}
             className="w-9 h-9 rounded-full object-cover ring-1 ring-black/10 group-hover:ring-pink-400/60 transition-all"
-            style={{ ringColor: 'var(--border)' }}
           />
         ) : (
-          <div className="w-9 h-9 bg-gradient-to-br from-pink-500 to-purple-600 rounded-full flex items-center justify-center text-white text-sm font-bold ring-1 group-hover:ring-pink-400/60 transition-all"
-            style={{ ringColor: 'var(--border)' }}>
+          <div
+            className="w-9 h-9 bg-gradient-to-br from-pink-500 to-purple-600 rounded-full flex items-center justify-center text-white text-sm font-bold ring-1 group-hover:ring-pink-400/60 transition-all"
+            aria-hidden="true"
+          >
             {user?.avatar}
           </div>
         )}
-        <span className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-          style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
+        <span
+          className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+          style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}
+          aria-hidden="true"
+        >
           <Pencil className="w-2 h-2 text-pink-400" />
         </span>
       </button>
 
       {open && (
         <>
-          <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
-          <div className="absolute left-0 bottom-12 z-50 rounded-xl shadow-2xl p-1.5 w-44"
-            style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
+          {/* Capa de cierre al clic fuera */}
+          <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} aria-hidden="true" />
+
+          {/* Menú — posición dinámica: por defecto hacia arriba (bottom-12),
+              pero si hay poco espacio superior se abre hacia abajo (top-12) */}
+          <div
+            role="menu"
+            aria-label="Opciones de perfil"
+            className="absolute left-0 z-50 rounded-xl shadow-2xl p-1.5 w-44"
+            style={{
+              bottom: '2.75rem',
+              background: 'var(--bg-card)',
+              border: '1px solid var(--border)',
+            }}
+          >
             <button
+              role="menuitem"
               onClick={() => { setOpen(false); onEdit() }}
               className="w-full flex items-center gap-2.5 px-3 py-2 text-sm rounded-lg transition-colors"
               style={{ color: 'var(--text-muted)' }}
               onMouseEnter={e => { e.currentTarget.style.background = 'var(--bg-hover)'; e.currentTarget.style.color = 'var(--text)' }}
               onMouseLeave={e => { e.currentTarget.style.background = ''; e.currentTarget.style.color = 'var(--text-muted)' }}
             >
-              <Pencil className="w-3.5 h-3.5" />
+              <Pencil className="w-3.5 h-3.5" aria-hidden="true" />
               {user?.profilePhoto ? 'Cambiar foto' : 'Subir foto'}
             </button>
+
             {user?.profilePhoto && (
               <button
+                role="menuitem"
                 onClick={() => { setOpen(false); onRemove() }}
                 className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-red-400/60 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"
               >
-                <Trash2 className="w-3.5 h-3.5" />
+                <Trash2 className="w-3.5 h-3.5" aria-hidden="true" />
                 Quitar foto
               </button>
             )}
@@ -73,11 +106,10 @@ function ProfileAvatar({ user, onEdit, onRemove }) {
   )
 }
 
-
 const navLinks = [
-  { to: '/', label: 'Galería', icon: LayoutGrid },
+  { to: '/',         label: 'Galería',    icon: LayoutGrid  },
   { to: '/calendar', label: 'Calendario', icon: CalendarDays },
-  { to: '/upload', label: 'Subir', icon: PlusCircle },
+  { to: '/upload',   label: 'Subir',      icon: PlusCircle  },
 ]
 
 export default function Layout({ children }) {
@@ -87,26 +119,44 @@ export default function Layout({ children }) {
   const fileInputRef = useRef(null)
 
   const handleLogout = () => { logout(); navigate('/login') }
+
   const handleFileChange = async (e) => {
     const file = e.target.files?.[0]
     if (!file) return
-    updateProfilePhoto(await toBase64(file))
-    e.target.value = ''
+    try {
+      updateProfilePhoto(await toBase64(file))
+    } catch (err) {
+      console.error('Error al convertir la foto de perfil:', err)
+    } finally {
+      e.target.value = ''
+    }
   }
 
   return (
     <div className="min-h-screen flex">
       {isSilvia && <HeartsBackground />}
-      <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
 
-      {/* ── Sidebar desktop ─────────────────────────────── */}
-      <aside className="hidden lg:flex flex-col fixed left-0 top-0 h-full w-56 z-50 px-4 py-6"
-        style={{ background: 'var(--bg-surface)', borderRight: '1px solid var(--border)' }}>
+      {/* Input oculto para subir foto de perfil */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={handleFileChange}
+        aria-hidden="true"
+        tabIndex={-1}
+      />
 
+      {/* ── Sidebar desktop ───────────────────────────────── */}
+      <aside
+        className="hidden lg:flex flex-col fixed left-0 top-0 h-full w-56 z-50 px-4 py-6"
+        style={{ background: 'var(--bg-surface)', borderRight: '1px solid var(--border)' }}
+        aria-label="Navegación principal"
+      >
         {/* Logo */}
-        <Link to="/" className="flex items-center gap-2.5 mb-10 group">
+        <Link to="/" className="flex items-center gap-2.5 mb-10 group" aria-label="Inicio — Nuestros Recuerdos">
           <div className="w-8 h-8 bg-gradient-to-br from-pink-500 to-purple-600 rounded-lg flex items-center justify-center flex-shrink-0 group-hover:scale-105 transition-transform shadow-lg shadow-pink-500/20">
-            <Heart className="w-4 h-4 text-white fill-white" />
+            <Heart className="w-4 h-4 text-white fill-white" aria-hidden="true" />
           </div>
           <p className="font-display font-black text-sm leading-tight" style={{ color: 'var(--text)' }}>
             Nuestros Recuerdos{isSilvia ? ' 💕' : ''}
@@ -114,14 +164,15 @@ export default function Layout({ children }) {
         </Link>
 
         {/* Nav */}
-        <nav className="flex flex-col gap-0.5 flex-1">
+        <nav className="flex flex-col gap-0.5 flex-1" aria-label="Páginas">
           {navLinks.map(({ to, label, icon: Icon }) => {
             const active = location.pathname === to
             return (
               <Link
                 key={to}
                 to={to}
-                className="flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-150 group"
+                aria-current={active ? 'page' : undefined}
+                className="flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-150"
                 style={{
                   background: active ? 'var(--bg-hover)' : '',
                   color: active ? 'var(--text)' : 'var(--text-muted)',
@@ -129,9 +180,9 @@ export default function Layout({ children }) {
                 onMouseEnter={e => { if (!active) { e.currentTarget.style.background = 'var(--bg-hover)'; e.currentTarget.style.color = 'var(--text)' } }}
                 onMouseLeave={e => { if (!active) { e.currentTarget.style.background = ''; e.currentTarget.style.color = 'var(--text-muted)' } }}
               >
-                <Icon className={`w-4 h-4 flex-shrink-0 ${active ? 'text-pink-400' : ''}`} />
+                <Icon className={`w-4 h-4 flex-shrink-0 ${active ? 'text-pink-400' : ''}`} aria-hidden="true" />
                 <span className="font-display font-bold text-sm">{label}</span>
-                {active && <span className="ml-auto w-1 h-1 rounded-full bg-pink-400" />}
+                {active && <span className="ml-auto w-1 h-1 rounded-full bg-pink-400" aria-hidden="true" />}
               </Link>
             )
           })}
@@ -139,7 +190,6 @@ export default function Layout({ children }) {
 
         {/* Footer sidebar */}
         <div className="pt-4 space-y-1" style={{ borderTop: '1px solid var(--border)' }}>
-          {/* Tema */}
           <ThemeToggle />
 
           <div className="flex items-center gap-2.5 px-3 py-2">
@@ -149,36 +199,41 @@ export default function Layout({ children }) {
               onRemove={() => updateProfilePhoto(null)}
             />
             <div className="min-w-0 flex-1">
-              <p className="font-display font-bold text-sm leading-none truncate" style={{ color: 'var(--text)' }}>{user?.username}</p>
+              <p className="font-display font-bold text-sm leading-none truncate" style={{ color: 'var(--text)' }}>
+                {user?.username}
+              </p>
               <p className="text-[11px] mt-0.5" style={{ color: 'var(--text-faint)' }}>perfil</p>
             </div>
           </div>
 
           <button
             onClick={handleLogout}
-            className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl transition-all text-sm group"
+            className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl transition-all text-sm"
             style={{ color: 'var(--text-faint)' }}
             onMouseEnter={e => { e.currentTarget.style.background = 'var(--bg-hover)'; e.currentTarget.style.color = 'var(--text-muted)' }}
             onMouseLeave={e => { e.currentTarget.style.background = ''; e.currentTarget.style.color = 'var(--text-faint)' }}
           >
-            <LogOut className="w-4 h-4" />
+            <LogOut className="w-4 h-4" aria-hidden="true" />
             <span className="font-display font-bold text-sm">Salir</span>
           </button>
         </div>
       </aside>
 
-      {/* ── Topbar sm/md (tablet/móvil) ─────────────────── */}
-      <header className="lg:hidden fixed top-0 left-0 right-0 z-50 backdrop-blur-xl h-13"
-        style={{ background: 'var(--bg-surface)', borderBottom: '1px solid var(--border)' }}>
-        <div className="h-13 flex items-center justify-between px-4">
-          <Link to="/" className="flex items-center gap-2 group">
+      {/* ── Topbar móvil/tablet ───────────────────────────── */}
+      <header
+        className="lg:hidden fixed top-0 left-0 right-0 z-50 backdrop-blur-xl"
+        style={{ background: 'var(--bg-surface)', borderBottom: '1px solid var(--border)', height: '3.25rem' }}
+      >
+        <div className="h-full flex items-center justify-between px-4">
+          <Link to="/" className="flex items-center gap-2 group" aria-label="Inicio">
             <div className="w-7 h-7 bg-gradient-to-br from-pink-500 to-purple-600 rounded-lg flex items-center justify-center group-hover:scale-105 transition-transform">
-              <Heart className="w-3.5 h-3.5 text-white fill-white" />
+              <Heart className="w-3.5 h-3.5 text-white fill-white" aria-hidden="true" />
             </div>
             <span className="font-display font-black text-sm" style={{ color: 'var(--text)' }}>
               {isSilvia ? 'Nuestros Recuerdos 💕' : 'Nuestros Recuerdos'}
             </span>
           </Link>
+
           <div className="flex items-center gap-1">
             <ThemeToggle compact />
             <ProfileAvatar
@@ -186,29 +241,39 @@ export default function Layout({ children }) {
               onEdit={() => fileInputRef.current?.click()}
               onRemove={() => updateProfilePhoto(null)}
             />
-            <button onClick={handleLogout} className="ml-1 transition-colors" style={{ color: 'var(--text-faint)' }}
+            <button
+              onClick={handleLogout}
+              className="ml-1 transition-colors p-1.5 rounded-lg"
+              style={{ color: 'var(--text-faint)' }}
+              aria-label="Cerrar sesión"
               onMouseEnter={e => e.currentTarget.style.color = 'var(--text-muted)'}
-              onMouseLeave={e => e.currentTarget.style.color = 'var(--text-faint)'}>
-              <LogOut className="w-4 h-4" />
+              onMouseLeave={e => e.currentTarget.style.color = 'var(--text-faint)'}
+            >
+              <LogOut className="w-4 h-4" aria-hidden="true" />
             </button>
           </div>
         </div>
       </header>
 
-      {/* ── Contenido principal ──────────────────────────── */}
+      {/* ── Contenido principal ───────────────────────────── */}
       <div className="flex-1 lg:ml-56 flex flex-col min-h-screen">
         <main className="flex-1 px-4 sm:px-6 lg:px-10 py-8 pt-20 lg:pt-8 pb-24 lg:pb-10 max-w-5xl w-full mx-auto lg:mx-0">
           {children}
         </main>
 
         <footer className="text-center py-5 text-[11px] font-display" style={{ color: 'var(--text-faint)' }}>
-          {isSilvia ? '💕 Hecho con amor para mi Mongola 💕' : '💕 Hecho con amor para guardar nuestros recuerdos 💕'}
+          {isSilvia
+            ? '💕 Hecho con amor para mi Mongola 💕'
+            : '💕 Hecho con amor para guardar nuestros recuerdos 💕'}
         </footer>
       </div>
 
-      {/* ── Bottom nav móvil ─────────────────────────────── */}
-      <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-50 backdrop-blur-xl"
-        style={{ background: 'var(--bg-surface)', borderTop: '1px solid var(--border)' }}>
+      {/* ── Bottom nav móvil ──────────────────────────────── */}
+      <nav
+        className="lg:hidden fixed bottom-0 left-0 right-0 z-50 backdrop-blur-xl"
+        style={{ background: 'var(--bg-surface)', borderTop: '1px solid var(--border)' }}
+        aria-label="Navegación"
+      >
         <div className="flex">
           {navLinks.map(({ to, label, icon: Icon }) => {
             const active = location.pathname === to
@@ -216,10 +281,11 @@ export default function Layout({ children }) {
               <Link
                 key={to}
                 to={to}
+                aria-current={active ? 'page' : undefined}
                 className="flex-1 flex flex-col items-center gap-1 py-3 transition-colors"
                 style={{ color: active ? 'var(--text)' : 'var(--text-faint)' }}
               >
-                <Icon className={`w-5 h-5 ${active ? 'text-pink-400' : ''}`} />
+                <Icon className={`w-5 h-5 ${active ? 'text-pink-400' : ''}`} aria-hidden="true" />
                 <span className="font-display font-bold text-[10px]">{label}</span>
               </Link>
             )
