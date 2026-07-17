@@ -1,4 +1,4 @@
-import { useState, useEffect, useLayoutEffect } from 'react'
+import { useState, useEffect, useLayoutEffect, useRef, useCallback } from 'react'
 import { Link } from 'react-router-dom'
 import { useGallery } from '../context/GalleryContext'
 import Layout from '../components/Layout'
@@ -293,24 +293,90 @@ function PostModal({ post, onClose, onDelete }) {
 }
 
 // ─── Post card ─────────────────────────────────────────────────────────────
+// Tamaños fijos: featured = 320px de alto, card normal = 220px.
+// El efecto parallax mueve la imagen según la posición del cursor dentro
+// de la tarjeta: translateX/Y hasta ±12px (featured) / ±8px (normal).
+const CARD_HEIGHT_FEATURED = 320
+const CARD_HEIGHT_NORMAL   = 220
+const PARALLAX_RANGE       = 12  // px máx de desplazamiento de la imagen
+
 function PostCard({ post, featured = false, onOpen }) {
-  const photos = post.photos || []
-  const monthIdx = (post.month || 1) - 1
-  const gradient = MONTH_COLORS[monthIdx]
+  const photos    = post.photos || []
+  const monthIdx  = (post.month || 1) - 1
+  const gradient  = MONTH_COLORS[monthIdx]
+  const cardRef   = useRef(null)
+  const imgRef    = useRef(null)
+  const rafRef    = useRef(null)
+  const height    = featured ? CARD_HEIGHT_FEATURED : CARD_HEIGHT_NORMAL
+  const range     = featured ? PARALLAX_RANGE : PARALLAX_RANGE * 0.65
+
+  const handleMouseMove = useCallback((e) => {
+    if (!cardRef.current || !imgRef.current) return
+    const rect   = cardRef.current.getBoundingClientRect()
+    // Posición normalizada de -1 a 1 dentro de la tarjeta
+    const nx = ((e.clientX - rect.left)  / rect.width  - 0.5) * 2
+    const ny = ((e.clientY - rect.top)   / rect.height - 0.5) * 2
+    const tx = -(nx * range)
+    const ty = -(ny * range)
+
+    if (rafRef.current) cancelAnimationFrame(rafRef.current)
+    rafRef.current = requestAnimationFrame(() => {
+      if (imgRef.current) {
+        // scale(1.10) para que haya margen al trasladar sin descubrir bordes
+        imgRef.current.style.transform = `scale(1.10) translate(${tx}px, ${ty}px)`
+      }
+    })
+  }, [range])
+
+  const handleMouseLeave = useCallback(() => {
+    if (rafRef.current) cancelAnimationFrame(rafRef.current)
+    if (imgRef.current) {
+      imgRef.current.style.transform = 'scale(1.10) translate(0px, 0px)'
+    }
+  }, [])
+
+  // Limpiar raf al desmontar
+  useEffect(() => () => { if (rafRef.current) cancelAnimationFrame(rafRef.current) }, [])
 
   return (
     <button
+      ref={cardRef}
       onClick={() => onOpen(post)}
-      className={`group relative w-full overflow-hidden rounded-2xl text-left transition-all duration-200 hover:-translate-y-0.5 active:scale-[0.98] ${featured ? 'aspect-[16/9]' : 'aspect-square'}`}
+      onMouseMove={handleMouseMove}
+      onMouseLeave={handleMouseLeave}
+      className="group relative w-full overflow-hidden rounded-2xl text-left active:scale-[0.98]"
+      style={{
+        height,
+        flexShrink: 0,
+        transition: 'box-shadow 0.2s ease, transform 0.15s ease',
+      }}
     >
       {photos[0] ? (
-        <img src={photos[0]} alt={post.title}
-          className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-[1.03]" />
+        <img
+          ref={imgRef}
+          src={photos[0]}
+          alt={post.title}
+          className="absolute inset-0 w-full h-full object-cover"
+          style={{
+            transform: 'scale(1.10) translate(0px, 0px)',
+            transition: 'transform 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94)',
+            willChange: 'transform',
+          }}
+        />
       ) : (
         <div className={`absolute inset-0 bg-gradient-to-br ${gradient}`} />
       )}
 
-      <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
+      {/* Gradiente base para legibilidad del texto */}
+      <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/15 to-transparent" />
+
+      {/* Overlay sutil en hover */}
+      <div
+        className="absolute inset-0 transition-opacity duration-300"
+        style={{ background: 'rgba(0,0,0,0.08)', opacity: 0 }}
+        onMouseEnter={e => e.currentTarget.style.opacity = 1}
+        onMouseLeave={e => e.currentTarget.style.opacity = 0}
+      />
 
       <div className="absolute bottom-0 left-0 right-0 p-3">
         <p className="font-display font-bold text-white text-sm leading-snug line-clamp-2">{post.title}</p>
@@ -357,7 +423,10 @@ function MonthSection({ monthNum, posts, gradient, onOpen }) {
         <div className="space-y-3">
           <PostCard post={first} featured onOpen={onOpen} />
           {rest.length > 0 && (
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+            <div
+              className="grid gap-3"
+              style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))' }}
+            >
               {rest.map(p => <PostCard key={p.id} post={p} onOpen={onOpen} />)}
             </div>
           )}
