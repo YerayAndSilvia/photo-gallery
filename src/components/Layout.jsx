@@ -1,8 +1,8 @@
 import { useRef, useState } from 'react'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
-import { useTheme } from '../context/ThemeContext'
-import { PlusCircle, LayoutGrid, LogOut, CalendarDays, Pencil, Trash2, Heart, Sun, Moon } from 'lucide-react'
+import { PlusCircle, LayoutGrid, LogOut, CalendarDays, Pencil, Trash2, Heart } from 'lucide-react'
+import ThemeToggle from './ThemeToggle'
 
 function toBase64(file) {
   return new Promise((resolve, reject) => {
@@ -72,30 +72,6 @@ function ProfileAvatar({ user, onEdit, onRemove }) {
   )
 }
 
-function ThemeToggle({ compact = false }) {
-  const { theme, toggle } = useTheme()
-  const isDark = theme === 'dark'
-  return (
-    <button
-      onClick={toggle}
-      aria-label={isDark ? 'Activar modo claro' : 'Activar modo oscuro'}
-      className={`flex items-center justify-center rounded-xl transition-all ${
-        compact ? 'w-8 h-8' : 'w-full gap-2.5 px-3 py-2'
-      }`}
-      style={{ color: 'var(--text-muted)' }}
-      onMouseEnter={e => { e.currentTarget.style.background = 'var(--bg-hover)'; e.currentTarget.style.color = 'var(--text)' }}
-      onMouseLeave={e => { e.currentTarget.style.background = ''; e.currentTarget.style.color = 'var(--text-muted)' }}
-    >
-      {isDark
-        ? <Sun className={compact ? 'w-4 h-4' : 'w-4 h-4 flex-shrink-0'} />
-        : <Moon className={compact ? 'w-4 h-4' : 'w-4 h-4 flex-shrink-0'} />
-      }
-      {!compact && (
-        <span className="font-display font-bold text-sm">{isDark ? 'Modo claro' : 'Modo oscuro'}</span>
-      )}
-    </button>
-  )
-}
 
 const navLinks = [
   { to: '/', label: 'Galería', icon: LayoutGrid },
@@ -192,7 +168,7 @@ export default function Layout({ children }) {
 
       {/* ── Topbar sm/md (tablet/móvil) ─────────────────── */}
       <header className="lg:hidden fixed top-0 left-0 right-0 z-50 backdrop-blur-xl h-13"
-        style={{ background: 'color-mix(in srgb, var(--bg) 95%, transparent)', borderBottom: '1px solid var(--border)' }}>
+        style={{ background: 'var(--bg-surface)', borderBottom: '1px solid var(--border)' }}>
         <div className="h-13 flex items-center justify-between px-4">
           <Link to="/" className="flex items-center gap-2 group">
             <div className="w-7 h-7 bg-gradient-to-br from-pink-500 to-purple-600 rounded-lg flex items-center justify-center group-hover:scale-105 transition-transform">
@@ -231,7 +207,7 @@ export default function Layout({ children }) {
 
       {/* ── Bottom nav móvil ─────────────────────────────── */}
       <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-50 backdrop-blur-xl"
-        style={{ background: 'color-mix(in srgb, var(--bg-surface) 95%, transparent)', borderTop: '1px solid var(--border)' }}>
+        style={{ background: 'var(--bg-surface)', borderTop: '1px solid var(--border)' }}>
         <div className="flex">
           {navLinks.map(({ to, label, icon: Icon }) => {
             const active = location.pathname === to

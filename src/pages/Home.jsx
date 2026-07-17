@@ -7,68 +7,78 @@ import { ChevronDown, ChevronUp, ImageIcon, Plus, ChevronLeft, ChevronRight, X, 
 import { supabase, STORAGE_BUCKET } from '../utils/supabase'
 
 // ─── Hero intro animation ──────────────────────────────────────────────────
+// Técnica: el título siempre está centrado con translate(-50%,-50%).
+// Para "moverse" a arriba-izq usamos scaleX/scaleY + translate en el mismo
+// transform, manteniendo las mismas unidades todo el tiempo.
+// Fases: enter (fade-in) → hold (quieto) → exit (fade-out con leve upward drift) → done
 function HeroIntro({ onDone }) {
-  const [phase, setPhase] = useState('enter')
-  const [visible, setVisible] = useState(false)
+  const [phase, setPhase] = useState('enter') // enter | hold | exit | done
+  const [show, setShow] = useState(false)      // dispara el fade-in tras 1 frame
 
   useLayoutEffect(() => {
-    const raf = requestAnimationFrame(() => setVisible(true))
+    const raf = requestAnimationFrame(() => setShow(true))
     return () => cancelAnimationFrame(raf)
   }, [])
 
   useEffect(() => {
-    const t1 = setTimeout(() => setPhase('hold'), 500)
-    const t2 = setTimeout(() => setPhase('move'), 1900)
-    const t3 = setTimeout(() => { onDone(); setPhase('done') }, 2900)
+    // enter → hold al terminar el fade-in (600ms)
+    const t1 = setTimeout(() => setPhase('hold'), 600)
+    // hold → exit después de 1.6s visible
+    const t2 = setTimeout(() => setPhase('exit'), 2200)
+    // exit → done cuando termina el fade-out (800ms)
+    const t3 = setTimeout(() => { setPhase('done'); onDone() }, 3100)
     return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3) }
   }, [onDone])
 
   if (phase === 'done') return null
 
-  const isMoving = phase === 'move'
-  const titleOpacity = isMoving ? 0 : visible ? 1 : 0
+  const isExit = phase === 'exit'
 
   return (
     <div className="fixed inset-0 z-[80] pointer-events-none" aria-hidden="true">
-      {/* Overlay de fondo */}
+      {/* Overlay — misma transición que el título */}
       <div
         className="absolute inset-0"
         style={{
           background: 'var(--bg)',
-          opacity: isMoving ? 0 : 1,
-          transition: isMoving ? 'opacity 0.75s ease' : 'none',
+          opacity: isExit ? 0 : show ? 1 : 0,
+          transition: isExit
+            ? 'opacity 0.75s cubic-bezier(0.4,0,0.6,1)'
+            : 'opacity 0.6s ease',
         }}
       />
-      {/* Título */}
+
+      {/* Título centrado, se eleva ligeramente al salir */}
       <div
         style={{
           position: 'fixed',
-          top: isMoving ? '20px' : '50%',
-          left: isMoving ? '20px' : '50%',
-          transform: isMoving ? 'translate(0,0)' : 'translate(-50%,-50%)',
-          fontSize: isMoving ? 'clamp(2rem, 5vw, 2.5rem)' : 'clamp(3.5rem, 12vw, 8rem)',
-          opacity: titleOpacity,
-          transition: isMoving
-            ? 'top 0.9s cubic-bezier(0.4,0,0.2,1), left 0.9s cubic-bezier(0.4,0,0.2,1), font-size 0.9s cubic-bezier(0.4,0,0.2,1), opacity 0.6s ease 0.15s'
-            : 'opacity 0.5s ease',
-          textAlign: isMoving ? 'left' : 'center',
-          lineHeight: 1,
+          top: '50%',
+          left: '50%',
+          transform: isExit
+            ? 'translate(-50%, calc(-50% - 24px))'  // sube 24px al salir
+            : 'translate(-50%, -50%)',
+          opacity: isExit ? 0 : show ? 1 : 0,
+          transition: isExit
+            ? 'opacity 0.65s cubic-bezier(0.4,0,1,1), transform 0.75s cubic-bezier(0.4,0,0.2,1)'
+            : 'opacity 0.6s ease',
+          textAlign: 'center',
           zIndex: 10,
+          willChange: 'opacity, transform',
         }}
       >
-        <p
-          className="font-semibold text-pink-400/80 uppercase tracking-[0.3em]"
-          style={{
-            fontSize: isMoving ? '0.55rem' : '0.7rem',
-            marginBottom: isMoving ? '4px' : '1rem',
-            opacity: isMoving ? 0 : 1,
-            transition: 'opacity 0.2s ease',
-          }}
-        >
+        <p className="font-semibold text-pink-400/80 uppercase tracking-[0.3em] mb-4"
+          style={{ fontSize: '0.7rem' }}>
           Álbum personal
         </p>
-        <span className="font-display font-black leading-[1.05]"
-          style={{ display: 'block', color: 'var(--text)' }}>
+        <span
+          className="font-display font-black"
+          style={{
+            display: 'block',
+            color: 'var(--text)',
+            fontSize: 'clamp(3.5rem, 12vw, 8rem)',
+            lineHeight: 1.05,
+          }}
+        >
           Nuestra<br />Galería
         </span>
       </div>

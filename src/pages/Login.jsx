@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { Eye, EyeOff } from 'lucide-react'
 import SilviaWelcome from '../components/SilviaWelcome'
+import ThemeToggle from '../components/ThemeToggle'
 
 export default function Login() {
   const { login } = useAuth()
@@ -32,6 +33,11 @@ export default function Login() {
   return (
     <div className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden"
       style={{ background: 'var(--bg)' }}>
+      {/* Botón de tema — siempre visible arriba a la derecha */}
+      <div className="absolute top-4 right-4 z-10">
+        <ThemeToggle compact />
+      </div>
+
       {/* Fondo atmosférico */}
       <div className="absolute inset-0 pointer-events-none">
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[400px] bg-pink-600/8 rounded-full blur-3xl" />
