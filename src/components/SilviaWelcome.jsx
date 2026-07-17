@@ -10,54 +10,53 @@ const PHRASES = [
   { text: 'Recuerda que te quiero', emoji: '🌸' },
 ]
 
-// Corazón SVG animado para la barra de carga
+// Barra de carga en corazones
 function HeartLoader({ progress }) {
+  const total = 10
+  const filled = Math.round((progress / 100) * total)
   return (
-    <div className="flex flex-col items-center gap-2 w-64">
-      {/* Fila de corazones que se van llenando */}
+    <div className="flex flex-col items-center gap-2">
       <div className="flex gap-1.5 items-center">
-        {Array.from({ length: 10 }).map((_, i) => {
-          const filled = i < Math.round(progress / 10)
-          return (
-            <span
-              key={i}
-              className="text-xl select-none transition-all duration-300"
-              style={{
-                opacity: filled ? 1 : 0.2,
-                transform: filled ? 'scale(1.15)' : 'scale(1)',
-                filter: filled ? 'drop-shadow(0 0 4px rgba(236,72,153,0.7))' : 'none',
-              }}
-            >
-              {filled ? '❤️' : '🤍'}
-            </span>
-          )
-        })}
+        {Array.from({ length: total }).map((_, i) => (
+          <span
+            key={i}
+            className="text-xl select-none transition-all duration-300"
+            style={{
+              opacity: i < filled ? 1 : 0.2,
+              transform: i < filled ? 'scale(1.2)' : 'scale(1)',
+              filter: i < filled ? 'drop-shadow(0 0 5px rgba(236,72,153,0.8))' : 'none',
+            }}
+          >
+            {i < filled ? '❤️' : '🤍'}
+          </span>
+        ))}
       </div>
-      <p className="text-xs text-pink-300">{Math.round(progress)}%</p>
+      <p className="text-xs text-pink-300 tabular-nums">{Math.round(progress)}%</p>
     </div>
   )
 }
 
-// Corazones orbitando en círculo
-const HEART_COUNT = 14
-const RADIUS = 115
-
+// Corazones orbitando — sin corazón central enorme
 function HeartOrbit() {
+  const COUNT = 12
+  const RADIUS = 90
+  const emojis = ['❤️', '💕', '💖', '💗', '💝', '💓', '🌸', '💞']
+
   return (
-    <div className="relative flex items-center justify-center" style={{ width: 300, height: 300 }}>
-      {Array.from({ length: HEART_COUNT }).map((_, i) => {
-        const angle = (i / HEART_COUNT) * 2 * Math.PI - Math.PI / 2
+    <div
+      className="relative flex items-center justify-center"
+      style={{ width: 220, height: 220 }}
+    >
+      {Array.from({ length: COUNT }).map((_, i) => {
+        const angle = (i / COUNT) * 2 * Math.PI - Math.PI / 2
         const x = Math.cos(angle) * RADIUS
         const y = Math.sin(angle) * RADIUS
-        const delay = (i / HEART_COUNT) * 2.4
-        const emojis = ['❤️', '💕', '💖', '💗', '💝', '💓', '🌸']
-        const emoji = emojis[i % emojis.length]
-        const sizes = ['text-xl', 'text-2xl', 'text-lg']
-        const size = sizes[i % sizes.length]
+        const delay = (i / COUNT) * 2
+        const sizes = ['text-lg', 'text-xl', 'text-base']
         return (
           <span
             key={i}
-            className={`absolute ${size} select-none`}
+            className={`absolute select-none ${sizes[i % 3]}`}
             style={{
               left: `calc(50% + ${x}px)`,
               top: `calc(50% + ${y}px)`,
@@ -65,26 +64,21 @@ function HeartOrbit() {
               animation: `heartPulse 1.8s ease-in-out ${delay}s infinite`,
             }}
           >
-            {emoji}
+            {emojis[i % emojis.length]}
           </span>
         )
       })}
 
-      {/* Corazón central grande */}
-      <div className="relative z-10 flex flex-col items-center">
-        <span
-          className="text-7xl select-none"
-          style={{ animation: 'heartPulse 1s ease-in-out infinite' }}
-        >
-          💖
-        </span>
+      {/* Centro: texto pequeño, no emoji gigante */}
+      <div className="relative z-10 flex flex-col items-center gap-1 select-none">
+        <span className="text-3xl" style={{ animation: 'heartPulse 1s ease-in-out infinite' }}>💖</span>
+        <span className="text-xs font-semibold text-pink-500 tracking-wide">Silvia</span>
       </div>
     </div>
   )
 }
 
 export default function SilviaWelcome({ onFinish }) {
-  // Rotar por todas las frases en orden aleatorio
   const order = useRef(
     [...Array(PHRASES.length).keys()].sort(() => Math.random() - 0.5)
   )
@@ -94,93 +88,85 @@ export default function SilviaWelcome({ onFinish }) {
   const [fadeOut, setFadeOut] = useState(false)
 
   const DURATION = 6000
-  const PHRASE_INTERVAL = DURATION / PHRASES.length
+  const PHRASE_INTERVAL = Math.floor(DURATION / PHRASES.length)
 
-  // Progreso
   useEffect(() => {
     const start = Date.now()
-    const interval = setInterval(() => {
-      const elapsed = Date.now() - start
-      const pct = Math.min((elapsed / DURATION) * 100, 100)
+    const id = setInterval(() => {
+      const pct = Math.min(((Date.now() - start) / DURATION) * 100, 100)
       setProgress(pct)
       if (pct >= 100) {
-        clearInterval(interval)
+        clearInterval(id)
         setFadeOut(true)
         setTimeout(onFinish, 700)
       }
     }, 30)
-    return () => clearInterval(interval)
+    return () => clearInterval(id)
   }, [onFinish])
 
-  // Rotar frases con fade
   useEffect(() => {
-    const interval = setInterval(() => {
+    const id = setInterval(() => {
       setPhraseVisible(false)
       setTimeout(() => {
-        setPhraseIdx((prev) => (prev + 1) % PHRASES.length)
+        setPhraseIdx((p) => (p + 1) % PHRASES.length)
         setPhraseVisible(true)
       }, 350)
     }, PHRASE_INTERVAL)
-    return () => clearInterval(interval)
-  }, [])
+    return () => clearInterval(id)
+  }, [PHRASE_INTERVAL])
 
-  const current = PHRASES[order.current[phraseIdx]]
+  const current = PHRASES[order.current[phraseIdx % PHRASES.length]]
 
   return (
     <div
       className="fixed inset-0 z-[100] flex items-center justify-center overflow-hidden"
       style={{
-        background: 'linear-gradient(135deg, #fdf2f8 0%, #fce7f3 30%, #f5d0fe 60%, #ede9fe 100%)',
+        background: 'linear-gradient(135deg, #fdf2f8 0%, #fce7f3 35%, #f5d0fe 65%, #ede9fe 100%)',
         opacity: fadeOut ? 0 : 1,
         transition: 'opacity 0.7s ease',
       }}
     >
       <FloatingHearts />
 
-      <div className="relative flex flex-col items-center gap-6 px-8 text-center">
-        {/* Órbita de corazones */}
+      <div className="relative z-10 flex flex-col items-center gap-7 px-8 text-center">
         <HeartOrbit />
 
-        {/* Frase con fade */}
+        {/* Frase rotante */}
         <div
-          className="max-w-xs min-h-[4rem] flex flex-col items-center gap-1"
+          className="flex flex-col items-center gap-2 min-h-[5rem]"
           style={{
             opacity: phraseVisible ? 1 : 0,
-            transform: phraseVisible ? 'translateY(0)' : 'translateY(8px)',
+            transform: phraseVisible ? 'translateY(0)' : 'translateY(10px)',
             transition: 'opacity 0.35s ease, transform 0.35s ease',
           }}
         >
-          <span className="text-3xl">{current.emoji}</span>
+          <span className="text-2xl leading-none">{current.emoji}</span>
           <p
-            className="text-2xl font-bold text-pink-600 leading-snug"
-            style={{ textShadow: '0 2px 20px rgba(236,72,153,0.3)' }}
+            className="text-2xl font-bold text-pink-600 leading-tight"
+            style={{ textShadow: '0 2px 16px rgba(236,72,153,0.25)' }}
           >
             {current.text}
           </p>
-          <span className="text-3xl">{current.emoji}</span>
+          <span className="text-2xl leading-none">{current.emoji}</span>
         </div>
 
-        {/* Saludo */}
-        <p className="text-lg text-pink-400 font-semibold -mt-2">
-          ¡Hola Silvia! 💕
-        </p>
+        <p className="text-base text-pink-400 font-semibold -mt-2">¡Hola Silvia! 💕</p>
 
-        {/* Carga en corazones */}
         <HeartLoader progress={progress} />
 
-        <p className="text-xs text-pink-300 -mt-1">Cargando vuestra galería...</p>
+        <p className="text-xs text-pink-300">Cargando vuestra galería...</p>
       </div>
 
       <style>{`
         @keyframes heartPulse {
           0%, 100% { transform: translate(-50%, -50%) scale(1); }
-          50% { transform: translate(-50%, -50%) scale(1.35); }
+          50%       { transform: translate(-50%, -50%) scale(1.35); }
         }
-        @keyframes floatHeart {
-          0% { transform: translateY(100vh) rotate(0deg); opacity: 0; }
-          10% { opacity: 1; }
-          90% { opacity: 0.5; }
-          100% { transform: translateY(-20vh) rotate(360deg); opacity: 0; }
+        @keyframes floatUp {
+          0%   { transform: translateY(110vh) rotate(0deg); opacity: 0; }
+          8%   { opacity: 0.9; }
+          92%  { opacity: 0.4; }
+          100% { transform: translateY(-15vh) rotate(360deg); opacity: 0; }
         }
       `}</style>
     </div>
@@ -189,26 +175,25 @@ export default function SilviaWelcome({ onFinish }) {
 
 function FloatingHearts() {
   const hearts = useRef(
-    Array.from({ length: 22 }).map((_, i) => ({
+    Array.from({ length: 20 }).map((_, i) => ({
       id: i,
-      left: `${(i * 4.5) % 100}%`,
-      delay: `${(i * 0.3) % 5}s`,
-      duration: `${4 + (i % 5)}s`,
-      size: ['text-sm', 'text-base', 'text-lg', 'text-xl', 'text-2xl'][i % 5],
+      left: `${(i * 5.1) % 100}%`,
+      delay: `${(i * 0.28) % 5}s`,
+      duration: `${4 + (i % 4)}s`,
+      size: ['text-sm', 'text-base', 'text-lg', 'text-xl'][i % 4],
       emoji: ['❤️', '💕', '💖', '💗', '💝', '💓', '🌸'][i % 7],
     }))
   )
-
   return (
     <div className="absolute inset-0 overflow-hidden pointer-events-none">
       {hearts.current.map((h) => (
         <span
           key={h.id}
-          className={`absolute ${h.size} select-none`}
+          className={`absolute select-none ${h.size}`}
           style={{
             left: h.left,
             bottom: '-10%',
-            animation: `floatHeart ${h.duration} ${h.delay} infinite ease-in-out`,
+            animation: `floatUp ${h.duration} ${h.delay} infinite ease-in-out`,
           }}
         >
           {h.emoji}
