@@ -3,93 +3,76 @@ import { Link } from 'react-router-dom'
 import { useGallery } from '../context/GalleryContext'
 import Layout from '../components/Layout'
 import { MONTHS, MONTH_COLORS } from '../utils/constants'
-import { ChevronDown, ChevronUp, ImageIcon, PlusCircle, Calendar } from 'lucide-react'
+import { ChevronDown, ChevronUp, ImageIcon, Plus } from 'lucide-react'
 
-// Parallax en hover para cada card
-function PostCard({ post }) {
+function PostCard({ post, featured = false }) {
   const cardRef = useRef(null)
   const monthIdx = (post.month || 1) - 1
   const gradient = MONTH_COLORS[monthIdx]
-  const firstPhoto = post.photos?.[0]
+  const photo = post.photos?.[0]
 
-  const handleMouseMove = (e) => {
-    const card = cardRef.current
-    if (!card) return
-    const rect = card.getBoundingClientRect()
-    const x = ((e.clientX - rect.left) / rect.width - 0.5) * 14
-    const y = ((e.clientY - rect.top) / rect.height - 0.5) * -14
-    card.style.transform = `perspective(800px) rotateX(${y}deg) rotateY(${x}deg) translateY(-4px)`
-    const img = card.querySelector('.parallax-img')
-    if (img) {
-      img.style.transform = `scale(1.08) translate(${x * 0.4}px, ${y * 0.4}px)`
-    }
+  const onMouseMove = (e) => {
+    const el = cardRef.current
+    if (!el) return
+    const r = el.getBoundingClientRect()
+    const x = ((e.clientX - r.left) / r.width - 0.5) * 12
+    const y = ((e.clientY - r.top) / r.height - 0.5) * -12
+    el.style.transform = `perspective(900px) rotateX(${y}deg) rotateY(${x}deg) translateY(-3px)`
+    const img = el.querySelector('.pimg')
+    if (img) img.style.transform = `scale(1.07) translate(${x * 0.35}px,${y * 0.35}px)`
   }
-
-  const handleMouseLeave = () => {
-    const card = cardRef.current
-    if (!card) return
-    card.style.transform = 'perspective(800px) rotateX(0deg) rotateY(0deg) translateY(0px)'
-    card.style.transition = 'transform 0.5s ease'
-    const img = card.querySelector('.parallax-img')
-    if (img) {
-      img.style.transform = 'scale(1) translate(0,0)'
-      img.style.transition = 'transform 0.5s ease'
-    }
+  const onMouseLeave = () => {
+    const el = cardRef.current
+    if (!el) return
+    el.style.transform = 'perspective(900px) rotateX(0) rotateY(0) translateY(0)'
+    el.style.transition = 'transform 0.45s ease'
+    const img = el.querySelector('.pimg')
+    if (img) { img.style.transform = 'scale(1) translate(0,0)'; img.style.transition = 'transform 0.45s ease' }
   }
-
-  const handleMouseEnter = () => {
-    const card = cardRef.current
-    if (!card) return
-    card.style.transition = 'transform 0.1s ease, box-shadow 0.2s ease'
-    const img = card.querySelector('.parallax-img')
-    if (img) img.style.transition = 'transform 0.1s ease'
+  const onMouseEnter = () => {
+    const el = cardRef.current
+    if (!el) return
+    el.style.transition = 'transform 0.08s ease'
+    const img = el.querySelector('.pimg')
+    if (img) img.style.transition = 'transform 0.08s ease'
   }
 
   return (
     <Link
       to={`/post/${post.id}`}
       ref={cardRef}
-      onMouseMove={handleMouseMove}
-      onMouseLeave={handleMouseLeave}
-      onMouseEnter={handleMouseEnter}
-      className="group block rounded-2xl overflow-hidden shadow-md hover:shadow-2xl transition-shadow duration-300 border border-white/40"
-      style={{ willChange: 'transform' }}
+      onMouseMove={onMouseMove}
+      onMouseLeave={onMouseLeave}
+      onMouseEnter={onMouseEnter}
+      className="group block relative overflow-hidden rounded-2xl bg-[#1a1a1a]"
+      style={{ willChange: 'transform', aspectRatio: featured ? '16/9' : '4/3' }}
     >
-      {/* Imagen landscape 16/9 */}
-      <div className="relative overflow-hidden" style={{ aspectRatio: '16/9' }}>
-        {firstPhoto ? (
-          <>
-            <img
-              src={firstPhoto}
-              alt={post.title}
-              className="parallax-img w-full h-full object-cover transition-transform duration-300"
-            />
-            {/* Overlay degradado */}
-            <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
-          </>
-        ) : (
-          <div className={`w-full h-full bg-gradient-to-br ${gradient} flex items-center justify-center`}>
-            <ImageIcon className="w-12 h-12 text-white/40" />
-          </div>
+      {photo ? (
+        <>
+          <img src={photo} alt={post.title}
+            className="pimg absolute inset-0 w-full h-full object-cover transition-transform duration-300 group-hover:brightness-90" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+        </>
+      ) : (
+        <div className={`absolute inset-0 bg-gradient-to-br ${gradient} opacity-40`} />
+      )}
+
+      {/* Número de fotos */}
+      <div className="absolute top-3 right-3 bg-black/50 backdrop-blur-sm text-white/80 text-[11px] px-2 py-0.5 rounded-full border border-white/10 tabular-nums">
+        {post.photos?.length || 0}
+      </div>
+
+      {/* Info inferior */}
+      <div className="absolute bottom-0 left-0 right-0 p-4 translate-y-1 group-hover:translate-y-0 transition-transform duration-300">
+        <p className="font-display font-bold text-white leading-tight text-sm sm:text-base drop-shadow-lg">
+          {post.title}
+        </p>
+        {post.description && (
+          <p className="text-white/50 text-xs mt-0.5 line-clamp-1">{post.description}</p>
         )}
-
-        {/* Badge fotos */}
-        <div className="absolute top-3 right-3 bg-black/40 backdrop-blur-sm text-white text-xs px-2.5 py-1 rounded-full border border-white/20">
-          {post.photos?.length || 0} foto{post.photos?.length !== 1 ? 's' : ''}
-        </div>
-
-        {/* Info sobre la imagen */}
-        <div className="absolute bottom-0 left-0 right-0 p-4">
-          <h3 className="font-bold text-white text-base leading-tight drop-shadow">
-            {post.title}
-          </h3>
-          {post.description && (
-            <p className="text-white/70 text-xs mt-1 line-clamp-1">{post.description}</p>
-          )}
-          <div className="flex items-center gap-1.5 mt-2">
-            <span className={`inline-block w-2 h-2 rounded-full bg-gradient-to-r ${gradient} flex-shrink-0`} />
-            <span className="text-white/60 text-xs">{MONTHS[(post.month || 1) - 1]} {post.year}</span>
-          </div>
+        <div className="flex items-center gap-1.5 mt-1.5">
+          <span className={`inline-block w-1.5 h-1.5 rounded-full bg-gradient-to-r ${gradient}`} />
+          <span className="text-white/40 text-[11px]">{MONTHS[monthIdx]} {post.year}</span>
         </div>
       </div>
     </Link>
@@ -98,33 +81,34 @@ function PostCard({ post }) {
 
 function MonthSection({ monthNum, posts, gradient }) {
   const [open, setOpen] = useState(true)
-  const monthName = MONTHS[monthNum - 1]
+
+  // Primera card más grande
+  const [first, ...rest] = posts
 
   return (
     <div className="space-y-3">
-      <button
-        onClick={() => setOpen((o) => !o)}
-        className="w-full flex items-center justify-between group"
-      >
-        <div className="flex items-center gap-3">
-          <div className={`w-1 h-6 rounded-full bg-gradient-to-b ${gradient}`} />
-          <span className="font-semibold text-gray-700 text-sm tracking-wide uppercase">
-            {monthName}
-          </span>
-          <span className="text-xs text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">
-            {posts.length}
-          </span>
-        </div>
-        {open
-          ? <ChevronUp className="w-4 h-4 text-gray-400" />
-          : <ChevronDown className="w-4 h-4 text-gray-400" />}
+      <button onClick={() => setOpen(o => !o)}
+        className="flex items-center gap-3 group w-full text-left">
+        <div className={`w-0.5 h-5 rounded-full bg-gradient-to-b ${gradient}`} />
+        <span className="text-xs font-semibold text-white/40 uppercase tracking-widest group-hover:text-white/70 transition-colors">
+          {MONTHS[monthNum - 1]}
+        </span>
+        <span className="text-xs text-white/20 bg-white/5 px-1.5 py-0.5 rounded-full">{posts.length}</span>
+        <span className="ml-auto text-white/20">
+          {open ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+        </span>
       </button>
 
       {open && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-          {posts.map((post) => (
-            <PostCard key={post.id} post={post} />
-          ))}
+        <div className="space-y-3">
+          {/* Card featured (primera) */}
+          <PostCard post={first} featured />
+          {/* Resto en grid */}
+          {rest.length > 0 && (
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+              {rest.map(p => <PostCard key={p.id} post={p} />)}
+            </div>
+          )}
         </div>
       )}
     </div>
@@ -133,44 +117,29 @@ function MonthSection({ monthNum, posts, gradient }) {
 
 function YearSection({ year, months }) {
   const [open, setOpen] = useState(true)
-  const totalPosts = Object.values(months).flat().length
 
   return (
-    <div className="space-y-6">
-      {/* Divisor de año */}
-      <button
-        onClick={() => setOpen((o) => !o)}
-        className="w-full flex items-center gap-4 group"
-      >
-        <div className="flex-1 h-px bg-gradient-to-r from-transparent via-pink-200 to-transparent" />
-        <div className="flex items-center gap-2.5 px-5 py-2 bg-white/80 backdrop-blur rounded-full shadow-sm border border-gray-100 hover:shadow-md transition-all">
-          <Calendar className="w-4 h-4 text-pink-400" />
-          <span className="font-bold text-gray-700 text-xl tracking-tight">{year}</span>
-          <span className="text-xs text-gray-400 bg-pink-50 px-2 py-0.5 rounded-full">
-            {totalPosts} post{totalPosts !== 1 ? 's' : ''}
-          </span>
-          {open
-            ? <ChevronUp className="w-4 h-4 text-gray-400" />
-            : <ChevronDown className="w-4 h-4 text-gray-400" />}
-        </div>
-        <div className="flex-1 h-px bg-gradient-to-r from-transparent via-pink-200 to-transparent" />
+    <section className="space-y-8">
+      <button onClick={() => setOpen(o => !o)}
+        className="flex items-center gap-4 w-full group">
+        <span className="font-display font-black text-3xl text-white/80 group-hover:text-white transition-colors">
+          {year}
+        </span>
+        <div className="flex-1 h-px bg-white/[0.06]" />
+        {open ? <ChevronUp className="w-4 h-4 text-white/20" /> : <ChevronDown className="w-4 h-4 text-white/20" />}
       </button>
 
       {open && (
-        <div className="space-y-8 pl-0">
+        <div className="space-y-10">
           {Object.entries(months)
             .sort(([a], [b]) => Number(b) - Number(a))
-            .map(([monthNum, posts]) => (
-              <MonthSection
-                key={monthNum}
-                monthNum={Number(monthNum)}
-                posts={posts}
-                gradient={MONTH_COLORS[Number(monthNum) - 1]}
-              />
+            .map(([mn, ps]) => (
+              <MonthSection key={mn} monthNum={Number(mn)} posts={ps}
+                gradient={MONTH_COLORS[Number(mn) - 1]} />
             ))}
         </div>
       )}
-    </div>
+    </section>
   )
 }
 
@@ -181,71 +150,55 @@ export default function Home() {
 
   return (
     <Layout>
-      <div className="space-y-10">
+      <div className="space-y-12">
+
         {/* Header */}
-        <div className="flex items-end justify-between">
+        <div className="flex items-end justify-between pt-2">
           <div>
-            <p className="text-xs font-semibold tracking-widest text-pink-400 uppercase mb-1">Álbum</p>
-            <h1 className="text-4xl font-black text-gray-900 tracking-tight leading-none">
-              Nuestra Galería
+            <p className="text-[11px] font-semibold text-pink-400/80 uppercase tracking-[0.2em] mb-2">Álbum personal</p>
+            <h1 className="font-display font-black text-4xl sm:text-5xl text-white leading-none">
+              Nuestra<br />Galería
             </h1>
-            <p className="text-gray-400 mt-2 text-sm">Todos vuestros momentos especiales</p>
           </div>
-          <Link
-            to="/upload"
-            className="flex items-center gap-2 px-5 py-2.5 bg-gray-900 text-white text-sm font-semibold rounded-xl hover:bg-gray-800 active:scale-95 transition-all duration-150 shadow-lg"
-          >
-            <PlusCircle className="w-4 h-4" />
-            Nuevo post
+          <Link to="/upload"
+            className="flex items-center gap-2 px-4 py-2 bg-white text-gray-900 text-sm font-semibold rounded-xl hover:bg-gray-100 active:scale-95 transition-all shadow-lg">
+            <Plus className="w-4 h-4" />
+            Nuevo
           </Link>
         </div>
 
-        {/* Contenido */}
+        {/* Estados */}
         {loading ? (
-          <div className="flex flex-col items-center justify-center py-32 gap-4">
-            <div className="flex gap-1">
-              {[0, 1, 2].map((i) => (
-                <span
-                  key={i}
-                  className="text-2xl select-none"
-                  style={{ animation: `heartPulse 1.2s ease-in-out ${i * 0.2}s infinite` }}
-                >
-                  ❤️
-                </span>
+          <div className="flex flex-col items-center justify-center py-32 gap-3">
+            <div className="flex gap-2">
+              {[0, 1, 2].map(i => (
+                <span key={i} className="text-2xl"
+                  style={{ animation: `heartbeat 1.2s ease-in-out ${i * 0.2}s infinite` }}>❤️</span>
               ))}
             </div>
-            <p className="text-gray-400 text-sm">Cargando recuerdos...</p>
-            <style>{`
-              @keyframes heartPulse {
-                0%, 100% { transform: scale(1); }
-                50% { transform: scale(1.4); }
-              }
-            `}</style>
+            <p className="text-white/30 text-sm">Cargando...</p>
+            <style>{`@keyframes heartbeat{0%,100%{transform:scale(1)}50%{transform:scale(1.4)}}`}</style>
           </div>
         ) : years.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-32 gap-5">
-            <div className="w-24 h-24 bg-gradient-to-br from-pink-50 to-purple-100 rounded-3xl flex items-center justify-center shadow-inner">
-              <ImageIcon className="w-10 h-10 text-pink-300" />
+          <div className="flex flex-col items-center justify-center py-32 gap-6 text-center">
+            <div className="w-20 h-20 rounded-2xl bg-white/5 flex items-center justify-center">
+              <ImageIcon className="w-8 h-8 text-white/20" />
             </div>
-            <div className="text-center">
-              <h2 className="text-xl font-bold text-gray-700">Aún no hay recuerdos</h2>
-              <p className="text-gray-400 text-sm mt-1 max-w-xs">
-                Empieza subiendo vuestras primeras fotos para crear un álbum lleno de momentos especiales.
+            <div>
+              <p className="font-display font-bold text-xl text-white/60">Sin recuerdos aún</p>
+              <p className="text-white/25 text-sm mt-1 max-w-xs">
+                Sube vuestras primeras fotos para empezar el álbum.
               </p>
             </div>
-            <Link
-              to="/upload"
-              className="flex items-center gap-2 px-6 py-3 bg-gray-900 text-white font-semibold rounded-xl hover:bg-gray-800 transition-all shadow-lg"
-            >
-              <PlusCircle className="w-4 h-4" />
-              Subir primeras fotos
+            <Link to="/upload"
+              className="flex items-center gap-2 px-6 py-2.5 bg-white text-gray-900 font-semibold rounded-xl hover:bg-gray-100 transition-all">
+              <Plus className="w-4 h-4" />
+              Subir fotos
             </Link>
           </div>
         ) : (
-          <div className="space-y-12">
-            {years.map((year) => (
-              <YearSection key={year} year={year} months={grouped[year]} />
-            ))}
+          <div className="space-y-16">
+            {years.map(y => <YearSection key={y} year={y} months={grouped[y]} />)}
           </div>
         )}
       </div>

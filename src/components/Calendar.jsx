@@ -1,85 +1,60 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useGallery } from '../context/GalleryContext'
-import { MONTHS, MONTH_COLORS, CURRENT_YEAR, YEARS } from '../utils/constants'
-import { ChevronLeft, ChevronRight, ImageIcon } from 'lucide-react'
+import { MONTHS, MONTH_COLORS, CURRENT_YEAR } from '../utils/constants'
+import { ChevronLeft, ChevronRight } from 'lucide-react'
 
 export default function Calendar() {
   const { getPostsByYear } = useGallery()
-  const [selectedYear, setSelectedYear] = useState(CURRENT_YEAR)
-  const grouped = getPostsByYear()
-  const yearData = grouped[selectedYear] || {}
-
-  const prevYear = () => setSelectedYear((y) => y - 1)
-  const nextYear = () => setSelectedYear((y) => y + 1)
+  const [year, setYear] = useState(CURRENT_YEAR)
+  const yearData = getPostsByYear()[year] || {}
 
   return (
     <div className="space-y-6">
-      {/* Selector de año */}
-      <div className="flex items-center justify-center gap-4">
-        <button
-          onClick={prevYear}
-          className="w-10 h-10 rounded-full bg-white shadow hover:shadow-md flex items-center justify-center text-gray-500 hover:text-pink-500 transition-all"
-        >
-          <ChevronLeft className="w-5 h-5" />
+      {/* Selector año */}
+      <div className="flex items-center gap-4">
+        <button onClick={() => setYear(y => y - 1)}
+          className="w-9 h-9 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center text-white/50 hover:text-white transition-all">
+          <ChevronLeft className="w-4 h-4" />
         </button>
-        <span className="text-3xl font-bold text-gray-800 w-20 text-center">{selectedYear}</span>
-        <button
-          onClick={nextYear}
-          className="w-10 h-10 rounded-full bg-white shadow hover:shadow-md flex items-center justify-center text-gray-500 hover:text-pink-500 transition-all"
-        >
-          <ChevronRight className="w-5 h-5" />
+        <span className="font-display font-black text-2xl text-white w-16 text-center tabular-nums">{year}</span>
+        <button onClick={() => setYear(y => y + 1)}
+          className="w-9 h-9 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center text-white/50 hover:text-white transition-all">
+          <ChevronRight className="w-4 h-4" />
         </button>
       </div>
 
-      {/* Grid de 12 meses */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+      {/* Grid meses */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
         {MONTHS.map((month, idx) => {
-          const monthPosts = yearData[idx + 1] || []
-          const hasPosts = monthPosts.length > 0
+          const posts = yearData[idx + 1] || []
+          const has = posts.length > 0
           const gradient = MONTH_COLORS[idx]
 
           return (
-            <div
-              key={month}
-              className={`rounded-2xl overflow-hidden border transition-all duration-200 ${
-                hasPosts
-                  ? 'border-transparent shadow-lg hover:shadow-xl hover:-translate-y-1'
-                  : 'border-gray-100 bg-white/50'
-              }`}
-            >
-              {/* Cabecera del mes */}
-              <div
-                className={`px-4 py-3 ${
-                  hasPosts
-                    ? `bg-gradient-to-r ${gradient}`
-                    : 'bg-gray-50'
-                }`}
-              >
-                <p className={`text-sm font-bold ${hasPosts ? 'text-white' : 'text-gray-400'}`}>
-                  {month}
-                </p>
+            <div key={month}
+              className={`rounded-xl overflow-hidden transition-all duration-200 ${
+                has ? 'hover:-translate-y-0.5 hover:shadow-lg hover:shadow-black/30' : ''
+              }`}>
+              <div className={`px-3 py-2.5 ${has ? `bg-gradient-to-r ${gradient}` : 'bg-white/[0.04]'}`}>
+                <p className={`text-sm font-semibold ${has ? 'text-white' : 'text-white/20'}`}>{month}</p>
               </div>
-
-              {/* Lista de posts o vacío */}
-              <div className="bg-white p-3 min-h-[80px]">
-                {hasPosts ? (
-                  <ul className="space-y-1.5">
-                    {monthPosts.map((post) => (
-                      <li key={post.id}>
-                        <Link
-                          to={`/post/${post.id}`}
-                          className="flex items-center gap-2 text-xs text-gray-600 hover:text-pink-500 transition-colors group"
-                        >
-                          <ImageIcon className="w-3 h-3 flex-shrink-0 text-pink-300 group-hover:text-pink-500" />
-                          <span className="truncate">{post.title}</span>
-                          <span className="ml-auto text-gray-300 flex-shrink-0">{post.photos?.length || 0}</span>
+              <div className={`p-2.5 min-h-[70px] ${has ? 'bg-white/[0.03]' : 'bg-white/[0.02]'}`}>
+                {has ? (
+                  <ul className="space-y-1">
+                    {posts.map(p => (
+                      <li key={p.id}>
+                        <Link to={`/post/${p.id}`}
+                          className="flex items-center gap-1.5 text-[11px] text-white/50 hover:text-white transition-colors group">
+                          <span className={`w-1 h-1 rounded-full bg-gradient-to-r ${gradient} flex-shrink-0`} />
+                          <span className="truncate group-hover:text-white/80">{p.title}</span>
+                          <span className="ml-auto text-white/20 flex-shrink-0 tabular-nums">{p.photos?.length}</span>
                         </Link>
                       </li>
                     ))}
                   </ul>
                 ) : (
-                  <p className="text-xs text-gray-300 text-center mt-2">Sin recuerdos aún</p>
+                  <p className="text-[11px] text-white/15 text-center mt-1.5">—</p>
                 )}
               </div>
             </div>
